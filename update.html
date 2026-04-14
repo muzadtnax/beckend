@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update Produk - E-Katalog</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-light">
+
+    <div class="container mt-5" style="max-width: 500px;">
+        <div class="card border-0 shadow-sm p-4" style="border-radius: 20px;">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3 class="fw-bold m-0">Update</h3>
+                <button class="btn btn-outline-danger btn-sm rounded-pill px-3 fw-bold">Hapus</button>
+            </div>
+            
+            <form>
+                <div class="mb-3">
+                    <label class="form-label">Ganti Gambar</label>
+                    <input type="file" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Nama Produk</label>
+                    <input type="text" class="form-control" value="Chitato Sapi Panggang 68g">
+                </div>
+                <div class="row">
+                    <div class="col-6 mb-3">
+                        <label class="form-label">Stok</label>
+                        <input type="number" class="form-control" value="12">
+                    </div>
+                    <div class="col-6 mb-3">
+                        <label class="form-label">Harga (Rp)</label>
+                        <input type="number" class="form-control" value="12500">
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label class="form-label">Kategori</label>
+                    <select class="form-select">
+                        <option selected>Makanan</option>
+                        <option>Minuman</option>
+                        <option>Lainnya</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-success w-100 rounded-pill py-2 fw-bold text-white">Simpan Perubahan</button>
+                <a href="index.html" class="btn btn-link w-100 mt-2 text-muted text-decoration-none">Batal</a>
+            </form>
+        </div>
+    </div>
+
+</body>
+</html>
