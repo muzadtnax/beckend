@@ -10,21 +10,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
-// SQLite database path
-$dbPath = __DIR__ . '/../data/e_katalog.db';
 
-// Pastikan directory data ada
-@mkdir(__DIR__ . '/../data', 0777, true);
-
-// Fungsi untuk membuat koneksi SQLite
+// Fungsi untuk membuat koneksi MySQL
 function createConnection() {
-    global $dbPath;
+    $host = 'localhost';
+    $dbname = 'e_katalog';
+    $user = 'root'; // Ganti jika password MySQL kamu berbeda
+    $pass = '';
     try {
-        $db = new PDO('sqlite:' . $dbPath);
+        $db = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $user, $pass);
         $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        
-        // Initialize database jika belum ada tabel
-        initializeDatabase($db);
         return $db;
     } catch (Exception $e) {
         http_response_code(500);
@@ -33,56 +28,7 @@ function createConnection() {
     }
 }
 
-// Inisialisasi database table
-function initializeDatabase($db) {
-    $tables = [
-        "CREATE TABLE IF NOT EXISTS tb_kategori (
-            id_kategori INTEGER PRIMARY KEY AUTOINCREMENT,
-            jenis_kategori TEXT NOT NULL,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )",
-        "CREATE TABLE IF NOT EXISTS tb_produk (
-            id_produk INTEGER PRIMARY KEY AUTOINCREMENT,
-            nama_produk TEXT NOT NULL,
-            harga REAL NOT NULL,
-            stok INTEGER NOT NULL DEFAULT 0,
-            deskripsi TEXT,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )",
-        "CREATE TABLE IF NOT EXISTS tb_produk_kategori (
-            id_produk_kategori INTEGER PRIMARY KEY AUTOINCREMENT,
-            id_produk INTEGER NOT NULL,
-            id_kategori INTEGER NOT NULL,
-            FOREIGN KEY(id_produk) REFERENCES tb_produk(id_produk) ON DELETE CASCADE,
-            FOREIGN KEY(id_kategori) REFERENCES tb_kategori(id_kategori) ON DELETE CASCADE
-        )"
-    ];
-    
-    foreach ($tables as $sql) {
-        try {
-            $db->exec($sql);
-        } catch (Exception $e) {
-            // Table sudah ada, skip
-        }
-    }
-    
-    // Insert sample data jika tabel kategori kosong
-    try {
-        $result = $db->query("SELECT COUNT(*) as cnt FROM tb_kategori");
-        $row = $result->fetch(PDO::FETCH_ASSOC);
-        
-        if ($row['cnt'] == 0) {
-            $db->exec("INSERT INTO tb_kategori (jenis_kategori) VALUES ('Elektronik'), ('Makanan'), ('Pakaian')");
-            $db->exec("INSERT INTO tb_produk (nama_produk, harga, stok, deskripsi) VALUES 
-                ('Laptop HP', 5000000, 10, 'Laptop gaming HP terbaru'),
-                ('Keyboard Mekanik', 500000, 25, 'Keyboard RGB mekanik'),
-                ('Monitor 27 inch', 2000000, 15, 'Monitor IPS 144Hz')");
-        }
-    } catch (Exception $e) {
-        // Ignore
-    }
-}
+// Hapus fungsi initializeDatabase (tidak perlu untuk MySQL, tabel sudah ada)
 
 // Fetch semua kategori
 function fetchKategori($db) {
