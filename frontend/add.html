@@ -311,9 +311,12 @@
                         <div class="invalid-feedback">Stok wajib diisi.</div>
                     </div>
                     <div class="col-6 mb-3">
-                        <label class="form-label">Harga (Rp) <span style="color:#ff6b6b">*</span></label>
-                        <input type="text" inputmode="numeric" id="harga-produk" class="form-control" placeholder="0">
-                        <div class="invalid-feedback">Harga wajib diisi.</div>
+                        <label class="form-label">Harga <span style="color:#ff6b6b">*</span></label>
+                        <div style="position:relative;">
+                            <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:rgba(255,255,255,0.4); font-size:14px; pointer-events:none;">Rp</span>
+                            <input type="text" inputmode="numeric" id="harga-produk" class="form-control" placeholder="0" style="padding-left:34px;">
+                        </div>
+                        <div class="invalid-feedback" id="harga-invalid" style="display:none;">Harga wajib diisi.</div>
                     </div>
                 </div>
 
@@ -460,21 +463,27 @@
         // Hapus gambar
         btnRemove.addEventListener('click', clearPreview);
 
-        // ===== ONLY ANGKA untuk Stok & Harga =====
-        ['stok-produk', 'harga-produk'].forEach(id => {
-            const el = document.getElementById(id);
+        // ===== ONLY ANGKA untuk Stok =====
+        const stokEl = document.getElementById('stok-produk');
+        stokEl.addEventListener('keydown', e => {
+            const allowed = ['Backspace','Delete','ArrowLeft','ArrowRight','Tab','Home','End'];
+            if (allowed.includes(e.key)) return;
+            if (!/^\d$/.test(e.key)) e.preventDefault();
+        });
+        stokEl.addEventListener('input', () => {
+            stokEl.value = stokEl.value.replace(/\D/g, '');
+        });
 
-            // Block karakter non-angka saat keydown
-            el.addEventListener('keydown', e => {
-                const allowed = ['Backspace','Delete','ArrowLeft','ArrowRight','Tab','Home','End'];
-                if (allowed.includes(e.key)) return;
-                if (!/^\d$/.test(e.key)) e.preventDefault();
-            });
-
-            // Bersihkan kalau ada huruf yang masuk (paste, dll)
-            el.addEventListener('input', () => {
-                el.value = el.value.replace(/\D/g, '');
-            });
+        // ===== FORMAT HARGA: titik setiap 3 digit =====
+        const hargaEl = document.getElementById('harga-produk');
+        hargaEl.addEventListener('keydown', e => {
+            const allowed = ['Backspace','Delete','ArrowLeft','ArrowRight','Tab','Home','End'];
+            if (allowed.includes(e.key)) return;
+            if (!/^\d$/.test(e.key)) e.preventDefault();
+        });
+        hargaEl.addEventListener('input', () => {
+            const raw = hargaEl.value.replace(/\D/g, '');
+            hargaEl.value = raw ? raw.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : '';
         });
     </script>
 </body>
