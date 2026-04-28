@@ -74,3 +74,106 @@
         margin: 0 10px;
     }
 }
+
+/* ADD PRODUCT PAGE STYLE */
+.add-product-body {
+    background: #0c0e17;
+    color: #ffffff;
+    min-height: 100vh;
+}
+
+.add-product-card {
+    background: #11131e;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 24px;
+}
+
+.add-product-card h4 {
+    color: #ffffff;
+}
+
+.image-upload-box {
+    border: 1px dashed rgba(255, 255, 255, 0.18);
+    border-radius: 18px;
+    padding: 18px;
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.image-preview {
+    min-height: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.04);
+    overflow: hidden;
+}
+
+.image-placeholder {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.55);
+}
+
+.placeholder-icon {
+    font-size: 38px;
+    margin-bottom: 12px;
+}
+
+.placeholder-text {
+    font-size: 14px;
+}
+
+.preview-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.btn-upload {
+    background: #16192d;
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 14px;
+    box-shadow: inset 0 0 0 rgba(0,0,0,0);
+}
+
+.btn-upload:hover {
+    background: #1f2743;
+}
+
+.form-control-dark,
+.form-select-dark {
+    background: #121529;
+    color: #f7f7f7;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.form-control-dark::placeholder,
+.form-select-dark option {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.btn-submit {
+    background: #00cb82;
+    border: none;
+    color: #0f172a;
+    font-weight: 600;
+}
+
+.btn-submit:hover {
+    background: #00b56d;
+}
+
+.btn-cancel {
+    color: #ffffff;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.btn-cancel:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.text-white {
+    color: #ffffff !important;
+}

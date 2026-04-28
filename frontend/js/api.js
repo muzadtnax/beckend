@@ -1,228 +1,249 @@
 // API URL base
-const API_BASE = '../backend/api.php';
+const API_BASE = 'http://localhost:8000/api.php';
+const UPLOAD_BASE = 'http://localhost:8000/uploads';
 
-// Fetch all produk
+async function requestApi(url, options = {}) {
+  if (options.body instanceof FormData) {
+    if (options.headers) {
+      delete options.headers['Content-Type'];
+      delete options.headers['content-type'];
+    }
+  }
+
+  try {
+    const response = await fetch(url, options);
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(text || 'Gagal menghubungi API');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('API request error:', error);
+    return { error: error.message || 'Terjadi kesalahan jaringan' };
+  }
+}
+
 async function fetchAllProduk() {
-  try {
-    const response = await fetch(`${API_BASE}?action=fetchProduk`);
-    if (!response.ok) throw new Error('Gagal fetch produk');
-    return await response.json();
-  } catch (error) {
-    console.error('Error fetchAllProduk:', error);
-    return [];
-  }
+  return await requestApi(`${API_BASE}?action=fetchProduk`);
 }
 
-// Fetch all kategori
 async function fetchAllKategori() {
-  try {
-    const response = await fetch(`${API_BASE}?action=fetchKategori`);
-    if (!response.ok) throw new Error('Gagal fetch kategori');
-    return await response.json();
-  } catch (error) {
-    console.error('Error fetchAllKategori:', error);
-    return [];
-  }
+  return await requestApi(`${API_BASE}?action=fetchKategori`);
 }
 
-// Add produk
-async function addProduk(produkData) {
-  try {
-    const response = await fetch(`${API_BASE}?action=addProduk`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(produkData)
-    });
-    
-    if (!response.ok) throw new Error('Gagal tambah produk');
-    return await response.json();
-  } catch (error) {
-    console.error('Error addProduk:', error);
-    return { error: error.message };
-  }
+async function fetchProdukById(id) {
+  return await requestApi(`${API_BASE}?action=fetchProdukById&id=${encodeURIComponent(id)}`);
 }
 
-// Update produk
-async function updateProduk(id, produkData) {
-  try {
-    const response = await fetch(`${API_BASE}?action=updateProduk&id=${id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(produkData)
-    });
-    
-    if (!response.ok) throw new Error('Gagal update produk');
-    return await response.json();
-  } catch (error) {
-    console.error('Error updateProduk:', error);
-    return { error: error.message };
-  }
-}
-
-// Delete produk
-async function deleteProduk(id) {
-  try {
-    const response = await fetch(`${API_BASE}?action=deleteProduk&id=${id}`, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-    
-    if (!response.ok) throw new Error('Gagal delete produk');
-    return await response.json();
-  } catch (error) {
-    console.error('Error deleteProduk:', error);
-    return { error: error.message };
-  }
-}
-
-// Format harga ke Rp
-function formatRupiah(harga) {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    minimumFractionDigits: 0
-  }).format(harga);
-}
-
-// Display produk di halaman index
-async function displayProduk() {
-  const produk = await fetchAllProduk();
-  const container = document.getElementById('produk-container');
-  
-  if (!container) return;
-  
-  if (produk.length === 0) {
-    container.innerHTML = '<p class="text-center text-muted">Tidak ada produk</p>';
-    return;
-  }
-  
-  container.innerHTML = produk.map(p => `
-    <div class="col-6 col-md-4 col-lg-2">
-      <div class="card product-card h-100">
-        <div class="img-wrapper"><img src="images/preview.jpg" alt="${p.nama_produk}"></div>
-        <div class="card-body p-2">
-          <h5 class="product-title">${p.nama_produk}</h5>
-          <div class="product-stock">Stok: ${p.stok}</div>
-          <div class="product-price">${formatRupiah(p.harga)}</div>
-          <div class="d-flex gap-2 mt-2">
-            <a href="update.html?id=${p.id_produk}" class="btn btn-outline-primary btn-sm flex-grow-1 rounded-pill">Edit</a>
-            <button onclick="deleteProdukConfirm(${p.id_produk})" class="btn btn-outline-danger btn-sm rounded-pill">Hapus</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  `).join('');
-}
-
-// Delete dengan konfirmasi
-function deleteProdukConfirm(id) {
-  if (confirm('Yakin hapus produk ini?')) {
-    deleteProduk(id).then(result => {
-      if (result.success) {
-        alert('Produk berhasil dihapus');
-        displayProduk();
-      } else {
-        alert('Gagal hapus produk: ' + result.error);
-      }
-    });
-  }
-}
-
-// Populate kategori dropdown
 async function populateKategoriDropdown() {
   const kategori = await fetchAllKategori();
-  const select = document.getElementById('kategori-select');
-  
+  const select = document.getElementById('kategori-produk');
   if (!select) return;
-  
-  select.innerHTML = '<option selected disabled>Pilih Kategori</option>' + 
+
+  if (kategori.error) {
+    select.innerHTML = '<option value="" disabled selected>Gagal memuat kategori</option>';
+    return;
+  }
+
+  select.innerHTML = '<option value="" disabled selected>Pilih kategori</option>' +
     kategori.map(k => `<option value="${k.id_kategori}">${k.jenis_kategori}</option>`).join('');
 }
 
-// Handle form submit di add.html
-async function handleAddProduk(event) {
-  event.preventDefault();
-  
-  const nama = document.getElementById('nama-produk').value;
-  const harga = parseFloat(document.getElementById('harga-produk').value);
-  const stok = parseInt(document.getElementById('stok-produk').value);
-  const deskripsi = document.getElementById('deskripsi-produk').value;
-  
-  if (!nama || !harga || !stok) {
-    alert('Nama, harga, dan stok harus diisi!');
+async function addProduk(produkData) {
+  return await requestApi(`${API_BASE}?action=addProduk`, {
+    method: 'POST',
+    body: produkData,
+  });
+}
+
+async function updateProduk(id, produkData) {
+  return await requestApi(`${API_BASE}?action=updateProduk&id=${encodeURIComponent(id)}`, {
+    method: 'POST',
+    body: produkData,
+  });
+}
+
+async function deleteProduk(id) {
+  return await requestApi(`${API_BASE}?action=deleteProduk&id=${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
+function formatRupiah(value) {
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    minimumFractionDigits: 0,
+  }).format(value);
+}
+
+function updateImagePreview(fileOrUrl) {
+  const preview = document.getElementById('image-preview');
+  if (!preview) return;
+
+  if (!fileOrUrl) {
+    preview.innerHTML = '<div class="image-placeholder"><div class="placeholder-icon">🖼️</div><div class="placeholder-text">Belum ada gambar</div></div>';
     return;
   }
-  
-  const result = await addProduk({
-    nama_produk: nama,
-    harga: harga,
-    stok: stok,
-    deskripsi: deskripsi
-  });
-  
+
+  if (typeof fileOrUrl === 'string') {
+    preview.innerHTML = `<img src="${fileOrUrl}" alt="Preview Gambar" class="preview-img">`;
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    preview.innerHTML = `<img src="${reader.result}" alt="Preview Gambar" class="preview-img">`;
+  };
+  reader.readAsDataURL(fileOrUrl);
+}
+
+async function displayProduk() {
+  const produk = await fetchAllProduk();
+  const container = document.getElementById('produk-container');
+  if (!container) return;
+
+  if (produk.error) {
+    container.innerHTML = `<div class="col-12"><div class="alert alert-danger">${produk.error}</div></div>`;
+    return;
+  }
+
+  if (!produk.length) {
+    container.innerHTML = '<div class="col-12"><p class="text-center text-muted">Belum ada produk.</p></div>';
+    return;
+  }
+
+  container.innerHTML = produk.map(item => {
+    const kategori = item.jenis_kategori ? item.jenis_kategori : 'Tanpa kategori';
+    const imageUrl = item.gambar ? `${UPLOAD_BASE}/${item.gambar}` : 'images/download.png';
+    return `
+      <div class="col-12 col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm">
+          <img src="${imageUrl}" alt="${item.nama_produk}" class="card-img-top" style="height: 180px; object-fit: cover;">
+          <div class="card-body d-flex flex-column">
+            <h5 class="card-title">${item.nama_produk}</h5>
+            <p class="card-text text-muted mb-1">Kategori: ${kategori}</p>
+            <p class="card-text mb-1">Stok: ${item.stok}</p>
+            <p class="card-text mb-3 fw-bold">${formatRupiah(item.harga)}</p>
+            <p class="card-text text-truncate mb-3">${item.deskripsi || '-'}</p>
+            <div class="mt-auto d-grid gap-2">
+              <a href="update.html?id=${item.id_produk}" class="btn btn-sm btn-primary">Edit</a>
+              <button class="btn btn-sm btn-danger" onclick="handleDeleteProduk('${item.id_produk}')">Hapus</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function handleDeleteProduk(id) {
+  if (!confirm('Yakin ingin menghapus produk ini?')) {
+    return;
+  }
+  const result = await deleteProduk(id);
   if (result.success) {
-    alert('Produk berhasil ditambahkan!');
+    alert('Produk berhasil dihapus');
+    displayProduk();
+  } else {
+    alert('Gagal hapus produk: ' + result.error);
+  }
+}
+
+async function handleAddProduk(event) {
+  event.preventDefault();
+  const nama = document.getElementById('nama-produk').value.trim();
+  const harga = parseFloat(document.getElementById('harga-produk').value);
+  const stok = parseInt(document.getElementById('stok-produk').value, 10);
+  const deskripsi = document.getElementById('deskripsi-produk').value.trim();
+  const kategori_id = document.getElementById('kategori-produk').value;
+  const gambarInput = document.getElementById('gambar-produk');
+
+  if (!nama || isNaN(harga) || isNaN(stok) || !kategori_id) {
+    alert('Nama, harga, stok, dan kategori harus diisi dengan benar.');
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('nama_produk', nama);
+  formData.append('harga', harga);
+  formData.append('stok', stok);
+  formData.append('deskripsi', deskripsi);
+  formData.append('kategori_id', kategori_id);
+  if (gambarInput && gambarInput.files.length > 0) {
+    formData.append('gambar', gambarInput.files[0]);
+  }
+
+  const result = await addProduk(formData);
+
+  if (result.success) {
+    alert('Produk berhasil ditambahkan');
     window.location.href = 'index.html';
   } else {
     alert('Gagal tambah produk: ' + result.error);
   }
 }
 
-// Untuk halaman update
 async function loadProdukForEdit() {
   const params = new URLSearchParams(window.location.search);
   const id = params.get('id');
-  
   if (!id) return;
-  
-  const produk = await fetchAllProduk();
-  const item = produk.find(p => p.id_produk == id);
-  
-  if (!item) return;
-  
-  document.getElementById('nama-produk').value = item.nama_produk;
-  document.getElementById('harga-produk').value = item.harga;
-  document.getElementById('stok-produk').value = item.stok;
-  document.getElementById('deskripsi-produk').value = item.deskripsi || '';
+
+  const produk = await fetchProdukById(id);
+  if (!produk || produk.error) {
+    alert(produk?.error || 'Produk tidak ditemukan');
+    return;
+  }
+
+  document.getElementById('nama-produk').value = produk.nama_produk || '';
+  document.getElementById('harga-produk').value = produk.harga || '';
+  document.getElementById('stok-produk').value = produk.stok || '';
+  document.getElementById('deskripsi-produk').value = produk.deskripsi || '';
+  if (produk.kategori_id) {
+    document.getElementById('kategori-produk').value = produk.kategori_id;
+  }
+  if (produk.gambar) {
+    updateImagePreview(`${UPLOAD_BASE}/${produk.gambar}`);
+  }
 }
 
-// Handle form submit di update.html
 async function handleUpdateProduk(event) {
   event.preventDefault();
-  
   const params = new URLSearchParams(window.location.search);
   const id = params.get('id');
-  
+
   if (!id) {
     alert('ID produk tidak ditemukan');
     return;
   }
-  
-  const nama = document.getElementById('nama-produk').value;
+
+  const nama = document.getElementById('nama-produk').value.trim();
   const harga = parseFloat(document.getElementById('harga-produk').value);
-  const stok = parseInt(document.getElementById('stok-produk').value);
-  const deskripsi = document.getElementById('deskripsi-produk').value;
-  
-  if (!nama || !harga || !stok) {
-    alert('Nama, harga, dan stok harus diisi!');
+  const stok = parseInt(document.getElementById('stok-produk').value, 10);
+  const deskripsi = document.getElementById('deskripsi-produk').value.trim();
+  const kategori_id = document.getElementById('kategori-produk').value;
+  const gambarInput = document.getElementById('gambar-produk');
+
+  if (!nama || isNaN(harga) || isNaN(stok) || !kategori_id) {
+    alert('Nama, harga, stok, dan kategori harus diisi dengan benar.');
     return;
   }
-  
-  const result = await updateProduk(id, {
-    nama_produk: nama,
-    harga: harga,
-    stok: stok,
-    deskripsi: deskripsi
-  });
-  
+
+  const formData = new FormData();
+  formData.append('nama_produk', nama);
+  formData.append('harga', harga);
+  formData.append('stok', stok);
+  formData.append('deskripsi', deskripsi);
+  formData.append('kategori_id', kategori_id);
+  if (gambarInput && gambarInput.files.length > 0) {
+    formData.append('gambar', gambarInput.files[0]);
+  }
+
+  const result = await updateProduk(id, formData);
+
   if (result.success) {
-    alert('Produk berhasil diupdate!');
+    alert('Produk berhasil diupdate');
     window.location.href = 'index.html';
   } else {
     alert('Gagal update produk: ' + result.error);

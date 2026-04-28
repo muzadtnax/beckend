@@ -8,69 +8,90 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body class="bg-light">
-
-    <div class="container mt-5" style="max-width: 500px;">
-        <div class="card border-0 shadow-sm p-4" style="border-radius: 20px;">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h3 class="fw-bold m-0">Update Produk</h3>
-                <button type="button" id="btn-delete" class="btn btn-outline-danger btn-sm rounded-pill px-3 fw-bold">Hapus</button>
+    <div class="container py-5" style="max-width: 540px;">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3 class="card-title m-0">Update Produk</h3>
+                    <button id="btn-delete" type="button" class="btn btn-outline-danger btn-sm">Hapus</button>
+                </div>
+                <form id="form-update-produk">
+                    <div class="image-upload-box mb-4">
+                        <div class="image-preview" id="image-preview">
+                            <div class="image-placeholder">
+                                <div class="placeholder-icon">🖼️</div>
+                                <div class="placeholder-text">Belum ada gambar</div>
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2 mt-3">
+                            <label class="btn btn-upload w-100 mb-0">
+                                Pilih File
+                                <input type="file" id="gambar-produk" accept="image/*" hidden>
+                            </label>
+                            <label class="btn btn-upload w-100 mb-0">
+                                Buka Kamera
+                                <input type="file" id="kamera-produk" accept="image/*" capture="environment" hidden>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Nama Produk *</label>
+                        <input type="text" id="nama-produk" class="form-control" required>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-6">
+                            <label class="form-label">Stok *</label>
+                            <input type="number" id="stok-produk" class="form-control" min="0" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Harga (Rp) *</label>
+                            <input type="number" id="harga-produk" class="form-control" min="0" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Kategori *</label>
+                        <select id="kategori-produk" class="form-select" required>
+                            <option value="" disabled selected>Pilih kategori</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Deskripsi</label>
+                        <textarea id="deskripsi-produk" class="form-control" rows="4"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-success w-100">Simpan Perubahan</button>
+                    <a href="index.html" class="btn btn-link w-100 mt-2">Batal</a>
+                </form>
             </div>
-            
-            <form id="form-update-produk">
-                <div class="mb-3">
-                    <label class="form-label">Nama Produk *</label>
-                    <input type="text" id="nama-produk" class="form-control" required>
-                </div>
-                <div class="row">
-                    <div class="col-6 mb-3">
-                        <label class="form-label">Stok *</label>
-                        <input type="number" id="stok-produk" class="form-control" required>
-                    </div>
-                    <div class="col-6 mb-3">
-                        <label class="form-label">Harga (Rp) *</label>
-                        <input type="number" id="harga-produk" class="form-control" required>
-                    </div>
-                </div>
-                <div class="mb-4">
-                    <label class="form-label">Deskripsi</label>
-                    <textarea id="deskripsi-produk" class="form-control" rows="3"></textarea>
-                </div>
-                <button type="submit" class="btn btn-success w-100 rounded-pill py-2 fw-bold text-white">Simpan Perubahan</button>
-                <a href="index.html" class="btn btn-link w-100 mt-2 text-muted text-decoration-none">Batal</a>
-            </form>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/api.js"></script>
     <script>
-        // Load produk data saat halaman dibuka
-        document.addEventListener('DOMContentLoaded', () => {
-            loadProdukForEdit();
-        });
+        document.addEventListener('DOMContentLoaded', async () => {
+            await populateKategoriDropdown();
+            await loadProdukForEdit();
+            document.getElementById('form-update-produk').addEventListener('submit', handleUpdateProduk);
+            document.getElementById('btn-delete').addEventListener('click', async () => {
+                const params = new URLSearchParams(window.location.search);
+                const id = params.get('id');
+                if (!id) return alert('ID produk tidak ditemukan');
+                if (!confirm('Yakin hapus produk ini?')) return;
+                const result = await deleteProduk(id);
+                if (result.success) {
+                    alert('Produk berhasil dihapus');
+                    window.location.href = 'index.html';
+                } else {
+                    alert('Gagal hapus produk: ' + result.error);
+                }
+            });
 
-        // Handle form submit
-        document.getElementById('form-update-produk').addEventListener('submit', handleUpdateProduk);
-
-        // Handle delete button
-        document.getElementById('btn-delete').addEventListener('click', () => {
-            const params = new URLSearchParams(window.location.search);
-            const id = params.get('id');
-            
-            if (!id) {
-                alert('ID produk tidak ditemukan');
-                return;
+            const fileInput = document.getElementById('gambar-produk');
+            const cameraInput = document.getElementById('kamera-produk');
+            if (fileInput) {
+                fileInput.addEventListener('change', (event) => updateImagePreview(event.target.files[0]));
             }
-            
-            if (confirm('Yakin hapus produk ini? Aksi ini tidak bisa dibatalkan.')) {
-                deleteProduk(id).then(result => {
-                    if (result.success) {
-                        alert('Produk berhasil dihapus');
-                        window.location.href = 'index.html';
-                    } else {
-                        alert('Gagal hapus produk: ' + result.error);
-                    }
-                });
+            if (cameraInput) {
+                cameraInput.addEventListener('change', (event) => updateImagePreview(event.target.files[0]));
             }
         });
     </script>

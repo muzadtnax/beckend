@@ -5,511 +5,94 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tambah Produk - E-Katalog</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="css/style.css">
-    <style>
-        .form-card {
-            background: #141414;
-            border: 1px solid rgba(255,255,255,0.07);
-            border-radius: 20px;
-            padding: 32px;
-        }
-
-<body class="bg-dark">
-    <div class="container mt-5" style="max-width: 500px;">
-        <div class="form-card">
-            <h3 class="fw-bold mb-4 text-center">Tambah Produk</h3>
-            <form id="form-add-produk" novalidate>
-                <div class="mb-3">
-                    <label class="form-label">Nama Produk *</label>
-                    <input type="text" id="nama-produk" class="form-control" placeholder="Masukkan nama produk" required>
-            margin-bottom: 24px;
-            text-align: center;
-        }
-
-        .form-label {
-            color: rgba(255,255,255,0.6);
-            font-size: 13px;
-            font-weight: 500;
-            margin-bottom: 6px;
-        }
-
-        .form-control,
-        .form-select {
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 10px;
-            color: #fff;
-            font-size: 14px;
-            padding: 10px 14px;
-            transition: all 0.2s;
-        }
-
-        .form-control:focus,
-        .form-select:focus {
-            background: rgba(0,168,118,0.08);
-            border-color: #00a876;
-            color: #fff;
-            box-shadow: 0 0 0 3px rgba(0,168,118,0.15);
-        }
-
-        .form-control::placeholder {
-            color: rgba(255,255,255,0.25);
-        }
-
-        .form-select option {
-            background: #1a1a1a;
-            color: #fff;
-        }
-
-        /* Invalid state */
-        .form-control.is-invalid,
-        .form-select.is-invalid {
-            border-color: #ff4d4d;
-            background: rgba(255,77,77,0.05);
-        }
-
-        .invalid-feedback {
-            font-size: 12px;
-            color: #ff6b6b;
-            margin-top: 5px;
-            display: none;
-        }
-
-        .form-control.is-invalid ~ .invalid-feedback,
-        .form-select.is-invalid ~ .invalid-feedback {
-            display: block;
-        }
-
-        /* Alert */
-        .alert-error {
-            background: rgba(255,77,77,0.1);
-            border: 1px solid rgba(255,77,77,0.3);
-            border-radius: 10px;
-            color: #ff6b6b;
-            font-size: 13px;
-            padding: 12px 16px;
-            margin-bottom: 20px;
-            display: none;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .alert-error.show {
-            display: flex;
-        }
-
-        .btn-save {
-            background: #00a876;
-            color: #fff;
-            border: none;
-            border-radius: 50px;
-            padding: 12px;
-            font-size: 15px;
-            font-weight: 600;
-            width: 100%;
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-
-        .btn-save:hover {
-            background: #00c98e;
-            transform: translateY(-1px);
-            box-shadow: 0 6px 20px rgba(0,168,118,0.4);
-        }
-
-        .btn-back {
-            display: block;
-            text-align: center;
-            color: rgba(255,255,255,0.35);
-            font-size: 13px;
-            text-decoration: none;
-            margin-top: 14px;
-            transition: color 0.2s;
-        }
-
-        .btn-back:hover {
-            color: rgba(255,255,255,0.7);
-        }
-
-        .back-nav {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            color: rgba(255,255,255,0.4);
-            font-size: 14px;
-            text-decoration: none;
-            margin-bottom: 20px;
-            transition: color 0.2s;
-        }
-
-        .back-nav:hover { color: #fff; }
-
-        /* ===== IMAGE PICKER ===== */
-        .img-picker-preview {
-            width: 100%;
-            aspect-ratio: 4 / 3;
-            background: rgba(255,255,255,0.04);
-            border: 2px dashed rgba(255,255,255,0.1);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            margin-bottom: 10px;
-            position: relative;
-        }
-
-        .img-picker-preview img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: none;
-        }
-
-        .img-picker-preview .placeholder {
-            text-align: center;
-            color: rgba(255,255,255,0.2);
-        }
-
-        .img-picker-preview .placeholder i {
-            font-size: 36px;
-            display: block;
-            margin-bottom: 6px;
-        }
-
-        .img-picker-preview .placeholder span {
-            font-size: 12px;
-        }
-
-        .img-picker-preview .btn-remove-img {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            background: rgba(0,0,0,0.6);
-            border: none;
-            color: #fff;
-            border-radius: 50%;
-            width: 28px;
-            height: 28px;
-            font-size: 14px;
-            cursor: pointer;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            transition: background 0.2s;
-        }
-
-        .img-picker-preview .btn-remove-img:hover {
-            background: rgba(255,77,77,0.8);
-        }
-
-        .img-picker-actions {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-        }
-
-        .btn-img-option {
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 10px;
-            color: rgba(255,255,255,0.6);
-            font-size: 13px;
-            font-weight: 500;
-            padding: 10px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 7px;
-            transition: all 0.2s;
-        }
-
-        .btn-img-option:hover {
-            background: rgba(0,168,118,0.1);
-            border-color: rgba(0,168,118,0.3);
-            color: #00a876;
-        }
-
-        .btn-img-option i {
-            font-size: 16px;
-        }
-    </style>
 </head>
-<body>
+<body class="add-product-body">
+    <div class="container py-5" style="max-width: 540px;">
+        <div class="card add-product-card shadow-lg">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <a href="index.html" class="text-white small text-decoration-none">&larr; Kembali</a>
+                    <h4 class="m-0">Tambah Produk</h4>
+                    <div></div>
+                </div>
 
-    <div class="container py-5" style="max-width: 480px;">
+                <div class="image-upload-box mb-4">
+                    <div class="image-preview" id="image-preview">
+                        <div class="image-placeholder">
+                            <div class="placeholder-icon">🖼️</div>
+                            <div class="placeholder-text">Belum ada gambar</div>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2 mt-3">
+                        <label class="btn btn-upload w-100 mb-0">
+                            Pilih File
+                            <input type="file" id="gambar-produk" accept="image/*" hidden>
+                        </label>
+                        <label class="btn btn-upload w-100 mb-0">
+                            Buka Kamera
+                            <input type="file" id="kamera-produk" accept="image/*" capture="environment" hidden>
+                        </label>
+                    </div>
+                </div>
 
-        <a href="index.html" class="back-nav">
-            <i class="bi bi-arrow-left"></i> Kembali
-        </a>
-
-        <div class="form-card">
-            <h3>Tambah Produk</h3>
-
-            <!-- Alert error -->
-            <div class="alert-error" id="alert-error">
-                <i class="bi bi-exclamation-circle-fill"></i>
-                <span id="alert-msg">Harap isi semua kolom yang wajib diisi.</span>
+                <form id="form-add-produk">
+                    <div class="mb-3">
+                        <label class="form-label text-white">Nama Produk *</label>
+                        <input type="text" id="nama-produk" class="form-control form-control-dark" placeholder="Masukkan nama produk" required>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-6">
+                            <label class="form-label text-white">Stok *</label>
+                            <input type="number" id="stok-produk" class="form-control form-control-dark" placeholder="0" min="0" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label text-white">Harga (Rp) *</label>
+                            <input type="number" id="harga-produk" class="form-control form-control-dark" placeholder="0" min="0" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-white">Kategori *</label>
+                        <select id="kategori-produk" class="form-select form-select-dark" required>
+                            <option value="" disabled selected>Pilih kategori</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-white">Deskripsi</label>
+                        <textarea id="deskripsi-produk" class="form-control form-control-dark" rows="4" placeholder="Deskripsi produk (opsional)"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-submit w-100">Simpan Produk</button>
+                    <a href="index.html" class="btn btn-cancel w-100 mt-3">Batal</a>
+                </form>
             </div>
-
-            <form id="form-add-produk" novalidate>
-
-                <!-- Gambar -->
-                <div class="mb-3">
-                    <label class="form-label">Gambar Produk</label>
-
-                    <!-- Preview -->
-                    <div class="img-picker-preview" id="img-preview-box">
-                        <img id="img-preview" src="" alt="Preview">
-                        <div class="placeholder" id="img-placeholder">
-                            <i class="bi bi-image"></i>
-                            <span>Belum ada gambar</span>
-                        </div>
-                        <button type="button" class="btn-remove-img" id="btn-remove-img" title="Hapus gambar">
-                            <i class="bi bi-x"></i>
-                        </button>
-                    </div>
-
-                    <!-- 2 Opsi -->
-                    <div class="img-picker-actions">
-                        <button type="button" class="btn-img-option" id="btn-choose-file">
-                            <i class="bi bi-folder2-open"></i> Pilih File
-                        </button>
-                        <button type="button" class="btn-img-option" id="btn-open-camera">
-                            <i class="bi bi-camera"></i> Buka Kamera
-                        </button>
-                    </div>
-
-                    <!-- Hidden inputs -->
-                    <input type="file" id="input-file" accept="image/*" style="display:none">
-
-                    <!-- Modal Kamera -->
-                    <div id="camera-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:9999; flex-direction:column; align-items:center; justify-content:center;">
-                        <video id="camera-stream" autoplay playsinline style="width:100%; max-width:480px; border-radius:12px; background:#000;"></video>
-                        <canvas id="camera-canvas" style="display:none;"></canvas>
-                        <div style="display:flex; gap:12px; margin-top:16px;">
-                            <button type="button" id="btn-capture" style="background:#00a876; color:#fff; border:none; border-radius:50px; padding:12px 28px; font-size:15px; font-weight:600; cursor:pointer;">
-                                <i class="bi bi-camera-fill me-2"></i>Ambil Foto
-                            </button>
-                            <button type="button" id="btn-close-camera" style="background:rgba(255,255,255,0.1); color:#fff; border:none; border-radius:50px; padding:12px 20px; font-size:15px; cursor:pointer;">
-                                Batal
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Nama Produk -->
-                <div class="mb-3">
-                    <label class="form-label">Nama Produk <span style="color:#ff6b6b">*</span></label>
-                    <input type="text" id="nama-produk" class="form-control" placeholder="Masukkan nama produk">
-                    <div class="invalid-feedback">Nama produk wajib diisi.</div>
->>>>>>> 259f3df03862c5819c0bab2d87840e809255c470
-                </div>
-
-                <!-- Stok & Harga -->
-                <div class="row">
-                    <div class="col-6 mb-3">
-<<<<<<< HEAD
-                        <label class="form-label">Stok *</label>
-                        <input type="number" id="stok-produk" class="form-control" placeholder="0" required>
-                    </div>
-                    <div class="col-6 mb-3">
-                        <label class="form-label">Harga (Rp) *</label>
-                        <input type="number" id="harga-produk" class="form-control" placeholder="0" required>
-=======
-                        <label class="form-label">Stok <span style="color:#ff6b6b">*</span></label>
-                        <input type="text" inputmode="numeric" id="stok-produk" class="form-control" placeholder="0">
-                        <div class="invalid-feedback">Stok wajib diisi.</div>
-                    </div>
-                    <div class="col-6 mb-3">
-                        <label class="form-label">Harga <span style="color:#ff6b6b">*</span></label>
-                        <div style="position:relative;">
-                            <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:rgba(255,255,255,0.4); font-size:14px; pointer-events:none;">Rp</span>
-                            <input type="text" inputmode="numeric" id="harga-produk" class="form-control" placeholder="0" style="padding-left:34px;">
-                        </div>
-                        <div class="invalid-feedback" id="harga-invalid" style="display:none;">Harga wajib diisi.</div>
->>>>>>> 259f3df03862c5819c0bab2d87840e809255c470
-                    </div>
-                </div>
-
-                <!-- Kategori -->
-                <div class="mb-4">
-<<<<<<< HEAD
-                    <label class="form-label">Deskripsi</label>
-                    <textarea id="deskripsi-produk" class="form-control" rows="3" placeholder="Deskripsi produk (opsional)"></textarea>
-=======
-                    <label class="form-label">Kategori <span style="color:#ff6b6b">*</span></label>
-                    <select id="kategori-produk" class="form-select">
-                        <option value="" disabled selected>Pilih Kategori</option>
-                        <option value="makanan">Makanan</option>
-                        <option value="minuman">Minuman</option>
-                        <option value="lainnya">Lainnya</option>
-                    </select>
-                    <div class="invalid-feedback">Kategori wajib dipilih.</div>
->>>>>>> 259f3df03862c5819c0bab2d87840e809255c470
-                </div>
-
-                <button type="submit" class="btn-save">Simpan Produk</button>
-                <a href="index.html" class="btn-back">Batal</a>
-            </form>
         </div>
     </div>
 
-<<<<<<< HEAD
     <script src="js/api.js"></script>
     <script>
-        document.getElementById('form-add-produk').addEventListener('submit', handleAddProduk);
-=======
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="js/api.js"></script>
-    <script>
-        const form = document.getElementById('form-add-produk');
-        const alertBox = document.getElementById('alert-error');
-        const alertMsg = document.getElementById('alert-msg');
-
-        form.addEventListener('submit', function (e) {
-            e.preventDefault();
-
-            const fields = [
-                { el: document.getElementById('nama-produk'),    label: 'Nama Produk' },
-                { el: document.getElementById('stok-produk'),    label: 'Stok' },
-                { el: document.getElementById('harga-produk'),   label: 'Harga' },
-                { el: document.getElementById('kategori-produk'), label: 'Kategori' },
-            ];
-
-            let valid = true;
-            const kosong = [];
-
-            // Reset dulu
-            fields.forEach(f => f.el.classList.remove('is-invalid'));
-            alertBox.classList.remove('show');
-
-            // Validasi
-            fields.forEach(f => {
-                if (!f.el.value || f.el.value.trim() === '') {
-                    f.el.classList.add('is-invalid');
-                    kosong.push(f.label);
-                    valid = false;
-                }
-            });
-
-            if (!valid) {
-                alertMsg.textContent = `Kolom berikut wajib diisi: ${kosong.join(', ')}.`;
-                alertBox.classList.add('show');
-                alertBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        function updateImagePreview(file) {
+            const preview = document.getElementById('image-preview');
+            if (!file) {
+                preview.innerHTML = '<div class="image-placeholder"><div class="placeholder-icon">🖼️</div><div class="placeholder-text">Belum ada gambar</div></div>';
                 return;
             }
-
-            // Kalau valid, lanjut ke handler API
-            if (typeof handleAddProduk === 'function') {
-                handleAddProduk(e);
-            }
-        });
-
-        // Hapus error saat user mulai isi
-        document.querySelectorAll('.form-control, .form-select').forEach(el => {
-            el.addEventListener('input', function () {
-                this.classList.remove('is-invalid');
-            });
-        });
-
-        // ===== IMAGE PICKER =====
-        const inputFile      = document.getElementById('input-file');
-        const imgPreview     = document.getElementById('img-preview');
-        const imgPlaceholder = document.getElementById('img-placeholder');
-        const btnRemove      = document.getElementById('btn-remove-img');
-        const cameraModal    = document.getElementById('camera-modal');
-        const cameraStream   = document.getElementById('camera-stream');
-        const cameraCanvas   = document.getElementById('camera-canvas');
-        let activeStream     = null;
-
-        function showPreview(src) {
-            imgPreview.src = src;
-            imgPreview.style.display = 'block';
-            imgPlaceholder.style.display = 'none';
-            btnRemove.style.display = 'flex';
-        }
-
-        function clearPreview() {
-            imgPreview.src = '';
-            imgPreview.style.display = 'none';
-            imgPlaceholder.style.display = 'block';
-            btnRemove.style.display = 'none';
-            inputFile.value = '';
-        }
-
-        // Pilih file
-        document.getElementById('btn-choose-file').addEventListener('click', () => inputFile.click());
-        inputFile.addEventListener('change', e => {
-            const file = e.target.files[0];
-            if (!file) return;
             const reader = new FileReader();
-            reader.onload = ev => showPreview(ev.target.result);
+            reader.onload = () => {
+                preview.innerHTML = `<img src="${reader.result}" alt="Preview Gambar" class="preview-img">`;
+            };
             reader.readAsDataURL(file);
-        });
-
-        // Buka kamera pakai getUserMedia
-        document.getElementById('btn-open-camera').addEventListener('click', async () => {
-            try {
-                activeStream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: 'environment' }
-                });
-                cameraStream.srcObject = activeStream;
-                cameraModal.style.display = 'flex';
-            } catch (err) {
-                alert('Tidak bisa mengakses kamera: ' + err.message);
-            }
-        });
-
-        // Ambil foto
-        document.getElementById('btn-capture').addEventListener('click', () => {
-            cameraCanvas.width  = cameraStream.videoWidth;
-            cameraCanvas.height = cameraStream.videoHeight;
-            cameraCanvas.getContext('2d').drawImage(cameraStream, 0, 0);
-            const dataUrl = cameraCanvas.toDataURL('image/jpeg');
-            showPreview(dataUrl);
-            stopCamera();
-        });
-
-        // Tutup kamera
-        document.getElementById('btn-close-camera').addEventListener('click', stopCamera);
-
-        function stopCamera() {
-            if (activeStream) {
-                activeStream.getTracks().forEach(t => t.stop());
-                activeStream = null;
-            }
-            cameraModal.style.display = 'none';
         }
 
-        // Hapus gambar
-        btnRemove.addEventListener('click', clearPreview);
+        document.addEventListener('DOMContentLoaded', async () => {
+            await populateKategoriDropdown();
+            document.getElementById('form-add-produk').addEventListener('submit', handleAddProduk);
 
-        // ===== ONLY ANGKA untuk Stok =====
-        const stokEl = document.getElementById('stok-produk');
-        stokEl.addEventListener('keydown', e => {
-            const allowed = ['Backspace','Delete','ArrowLeft','ArrowRight','Tab','Home','End'];
-            if (allowed.includes(e.key)) return;
-            if (!/^\d$/.test(e.key)) e.preventDefault();
-        });
-        stokEl.addEventListener('input', () => {
-            stokEl.value = stokEl.value.replace(/\D/g, '');
-        });
+            const fileInput = document.getElementById('gambar-produk');
+            const cameraInput = document.getElementById('kamera-produk');
 
-        // ===== FORMAT HARGA: titik setiap 3 digit =====
-        const hargaEl = document.getElementById('harga-produk');
-        hargaEl.addEventListener('keydown', e => {
-            const allowed = ['Backspace','Delete','ArrowLeft','ArrowRight','Tab','Home','End'];
-            if (allowed.includes(e.key)) return;
-            if (!/^\d$/.test(e.key)) e.preventDefault();
+            fileInput.addEventListener('change', (event) => updateImagePreview(event.target.files[0]));
+            cameraInput.addEventListener('change', (event) => updateImagePreview(event.target.files[0]));
         });
-        hargaEl.addEventListener('input', () => {
-            const raw = hargaEl.value.replace(/\D/g, '');
-            hargaEl.value = raw ? raw.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : '';
-        });
->>>>>>> 259f3df03862c5819c0bab2d87840e809255c470
     </script>
 </body>
 </html>
