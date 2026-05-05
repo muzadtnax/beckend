@@ -116,20 +116,25 @@ async function displayProduk() {
 
   container.innerHTML = produk.map(item => {
     const kategori = item.jenis_kategori ? item.jenis_kategori : 'Tanpa kategori';
-    const imageUrl = item.gambar ? `${UPLOAD_BASE}/${item.gambar}` : 'images/download.png';
+    const imageUrl = item.gambar ? `${UPLOAD_BASE}/${item.gambar}` : 'images/logo.png';
     return `
-      <div class="col-12 col-md-6 col-lg-4">
-        <div class="card h-100 shadow-sm">
-          <img src="${imageUrl}" alt="${item.nama_produk}" class="card-img-top" style="height: 180px; object-fit: cover;">
-          <div class="card-body d-flex flex-column">
-            <h5 class="card-title">${item.nama_produk}</h5>
-            <p class="card-text text-muted mb-1">Kategori: ${kategori}</p>
-            <p class="card-text mb-1">Stok: ${item.stok}</p>
-            <p class="card-text mb-3 fw-bold">${formatRupiah(item.harga)}</p>
-            <p class="card-text text-truncate mb-3">${item.deskripsi || '-'}</p>
-            <div class="mt-auto d-grid gap-2">
-              <a href="update.html?id=${item.id_produk}" class="btn btn-sm btn-primary">Edit</a>
-              <button class="btn btn-sm btn-danger" onclick="handleDeleteProduk('${item.id_produk}')">Hapus</button>
+      <div class="col-6 col-md-4 col-lg-3">
+        <div class="product-card h-100">
+          <div class="img-wrapper">
+            <img src="${imageUrl}" alt="${item.nama_produk}" loading="lazy">
+          </div>
+          <div class="card-body">
+            <span class="product-kategori">${kategori}</span>
+            <h5 class="product-title">${item.nama_produk}</h5>
+            <div class="product-stock"><i class="bi bi-box-seam me-1"></i>Stok: ${item.stok}</div>
+            <div class="product-price">${formatRupiah(item.harga)}</div>
+            <div class="product-actions">
+              <a href="update.html?id=${item.id_produk}" class="btn-update">
+                <i class="bi bi-pencil me-1"></i>Edit
+              </a>
+              <button class="btn-hapus" onclick="handleDeleteProduk('${item.id_produk}')">
+                <i class="bi bi-trash"></i>
+              </button>
             </div>
           </div>
         </div>
@@ -154,11 +159,16 @@ async function handleDeleteProduk(id) {
 async function handleAddProduk(event) {
   event.preventDefault();
   const nama = document.getElementById('nama-produk').value.trim();
-  const harga = parseFloat(document.getElementById('harga-produk').value);
+
+  // Strip titik pemisah ribuan sebelum parse
+  const hargaRaw = document.getElementById('harga-produk').value.replace(/\./g, '');
+  const harga = parseFloat(hargaRaw);
+
   const stok = parseInt(document.getElementById('stok-produk').value, 10);
-  const deskripsi = document.getElementById('deskripsi-produk').value.trim();
   const kategori_id = document.getElementById('kategori-produk').value;
-  const gambarInput = document.getElementById('gambar-produk');
+
+  // Coba baca dari input-file (add.html baru) atau gambar-produk (fallback)
+  const gambarInput = document.getElementById('input-file') || document.getElementById('gambar-produk');
 
   if (!nama || isNaN(harga) || isNaN(stok) || !kategori_id) {
     alert('Nama, harga, stok, dan kategori harus diisi dengan benar.');
@@ -169,10 +179,22 @@ async function handleAddProduk(event) {
   formData.append('nama_produk', nama);
   formData.append('harga', harga);
   formData.append('stok', stok);
-  formData.append('deskripsi', deskripsi);
   formData.append('kategori_id', kategori_id);
-  if (gambarInput && gambarInput.files.length > 0) {
+
+  // Cek apakah ada file yang dipilih
+  if (gambarInput && gambarInput.files && gambarInput.files.length > 0) {
     formData.append('gambar', gambarInput.files[0]);
+  }
+
+  // Cek apakah ada foto dari kamera (canvas blob)
+  const cameraCanvas = document.getElementById('camera-canvas');
+  if (cameraCanvas && cameraCanvas.width > 0 && !(gambarInput && gambarInput.files && gambarInput.files.length > 0)) {
+    await new Promise(resolve => {
+      cameraCanvas.toBlob(blob => {
+        if (blob) formData.append('gambar', blob, 'foto-kamera.jpg');
+        resolve();
+      }, 'image/jpeg', 0.85);
+    });
   }
 
   const result = await addProduk(formData);
@@ -197,14 +219,32 @@ async function loadProdukForEdit() {
   }
 
   document.getElementById('nama-produk').value = produk.nama_produk || '';
-  document.getElementById('harga-produk').value = produk.harga || '';
   document.getElementById('stok-produk').value = produk.stok || '';
-  document.getElementById('deskripsi-produk').value = produk.deskripsi || '';
-  if (produk.kategori_id) {
-    document.getElementById('kategori-produk').value = produk.kategori_id;
+
+  // Format harga dengan titik setiap 3 digit
+  const hargaEl = document.getElementById('harga-produk');
+  if (hargaEl && produk.harga) {
+    const raw = String(Math.round(produk.harga));
+    hargaEl.value = raw.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
   }
+
+  // Set kategori
+  if (produk.kategori_id) {
+    const select = document.getElementById('kategori-produk');
+    if (select) select.value = produk.kategori_id;
+  }
+
+  // Tampilkan gambar existing
   if (produk.gambar) {
-    updateImagePreview(`${UPLOAD_BASE}/${produk.gambar}`);
+    const imgPreview = document.getElementById('img-preview');
+    const imgPlaceholder = document.getElementById('img-placeholder');
+    const btnRemove = document.getElementById('btn-remove-img');
+    if (imgPreview) {
+      imgPreview.src = `${UPLOAD_BASE}/${produk.gambar}`;
+      imgPreview.style.display = 'block';
+      if (imgPlaceholder) imgPlaceholder.style.display = 'none';
+      if (btnRemove) btnRemove.style.display = 'flex';
+    }
   }
 }
 
@@ -219,11 +259,16 @@ async function handleUpdateProduk(event) {
   }
 
   const nama = document.getElementById('nama-produk').value.trim();
-  const harga = parseFloat(document.getElementById('harga-produk').value);
+
+  // Strip titik pemisah ribuan sebelum parse
+  const hargaRaw = document.getElementById('harga-produk').value.replace(/\./g, '');
+  const harga = parseFloat(hargaRaw);
+
   const stok = parseInt(document.getElementById('stok-produk').value, 10);
-  const deskripsi = document.getElementById('deskripsi-produk').value.trim();
   const kategori_id = document.getElementById('kategori-produk').value;
-  const gambarInput = document.getElementById('gambar-produk');
+
+  // Coba baca dari input-file (update.html baru) atau gambar-produk (fallback)
+  const gambarInput = document.getElementById('input-file') || document.getElementById('gambar-produk');
 
   if (!nama || isNaN(harga) || isNaN(stok) || !kategori_id) {
     alert('Nama, harga, stok, dan kategori harus diisi dengan benar.');
@@ -234,10 +279,21 @@ async function handleUpdateProduk(event) {
   formData.append('nama_produk', nama);
   formData.append('harga', harga);
   formData.append('stok', stok);
-  formData.append('deskripsi', deskripsi);
   formData.append('kategori_id', kategori_id);
-  if (gambarInput && gambarInput.files.length > 0) {
+
+  if (gambarInput && gambarInput.files && gambarInput.files.length > 0) {
     formData.append('gambar', gambarInput.files[0]);
+  }
+
+  // Cek foto dari kamera
+  const cameraCanvas = document.getElementById('camera-canvas');
+  if (cameraCanvas && cameraCanvas.width > 0 && !(gambarInput && gambarInput.files && gambarInput.files.length > 0)) {
+    await new Promise(resolve => {
+      cameraCanvas.toBlob(blob => {
+        if (blob) formData.append('gambar', blob, 'foto-kamera.jpg');
+        resolve();
+      }, 'image/jpeg', 0.85);
+    });
   }
 
   const result = await updateProduk(id, formData);
