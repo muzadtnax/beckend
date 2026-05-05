@@ -92,10 +92,49 @@ function fetchProdukById($db, $id) {
     }
 }
 
+function validateProdukData($db, $data) {
+    $errors = [];
+
+    if (empty($data['nama_produk'])) {
+        $errors[] = 'Nama produk harus diisi';
+    }
+
+    if (!isset($data['harga']) || $data['harga'] === '') {
+        $errors[] = 'Harga harus diisi';
+    } elseif (!is_numeric($data['harga'])) {
+        $errors[] = 'Harga harus berupa angka';
+    } elseif (floatval($data['harga']) < 0) {
+        $errors[] = 'Harga tidak boleh bernilai negatif';
+    }
+
+    if (!isset($data['stok']) || $data['stok'] === '') {
+        $errors[] = 'Stok harus diisi';
+    } elseif (!is_numeric($data['stok']) || intval($data['stok']) != $data['stok']) {
+        $errors[] = 'Stok harus berupa bilangan bulat';
+    } elseif (intval($data['stok']) < 0) {
+        $errors[] = 'Stok tidak boleh bernilai negatif';
+    }
+
+    if (!isset($data['kategori_id']) || $data['kategori_id'] === '') {
+        $errors[] = 'Kategori harus dipilih';
+    } elseif (!ctype_digit(strval($data['kategori_id']))) {
+        $errors[] = 'Kategori tidak valid';
+    } else {
+        $stmtCheck = $db->prepare("SELECT COUNT(*) FROM tb_kategori WHERE id_kategori = ?");
+        $stmtCheck->execute([intval($data['kategori_id'])]);
+        if ($stmtCheck->fetchColumn() == 0) {
+            $errors[] = 'Kategori tidak ditemukan';
+        }
+    }
+
+    return $errors;
+}
+
 function addProduk($db, $data) {
-    if (!isset($data['nama_produk']) || !isset($data['harga']) || !isset($data['stok']) || !isset($data['kategori_id'])) {
+    $errors = validateProdukData($db, $data);
+    if (!empty($errors)) {
         http_response_code(400);
-        return ['error' => 'Missing required fields: nama_produk, harga, stok, kategori_id'];
+        return ['error' => implode('. ', $errors)];
     }
 
     try {
@@ -104,21 +143,19 @@ function addProduk($db, $data) {
         $gambar = handleFileUpload('gambar');
         $stmt = $db->prepare("INSERT INTO tb_produk (nama_produk, harga, stok, deskripsi, gambar) VALUES (?, ?, ?, ?, ?)");
         $deskripsi = $data['deskripsi'] ?? '';
-        $stmt->execute([$data['nama_produk'], $data['harga'], $data['stok'], $deskripsi, $gambar]);
+        $stmt->execute([
+            trim($data['nama_produk']),
+            floatval($data['harga']),
+            intval($data['stok']),
+            $deskripsi,
+            $gambar
+        ]);
 
         $produkId = $db->lastInsertId();
-        $kategoriId = $data['kategori_id'];
+        $kategoriId = intval($data['kategori_id']);
 
-        if (!empty($kategoriId)) {
-            $stmtCheck = $db->prepare("SELECT COUNT(*) FROM tb_kategori WHERE id_kategori = ?");
-            $stmtCheck->execute([$kategoriId]);
-            if ($stmtCheck->fetchColumn() == 0) {
-                throw new Exception('Kategori tidak ditemukan');
-            }
-
-            $stmtRelation = $db->prepare("INSERT INTO tb_produk_kategori (id_produk, id_kategori) VALUES (?, ?)");
-            $stmtRelation->execute([$produkId, $kategoriId]);
-        }
+        $stmtRelation = $db->prepare("INSERT INTO tb_produk_kategori (id_produk, id_kategori) VALUES (?, ?)");
+        $stmtRelation->execute([$produkId, $kategoriId]);
 
         $db->commit();
         return ['success' => true, 'message' => 'Produk berhasil ditambahkan', 'id' => $produkId];
@@ -130,9 +167,10 @@ function addProduk($db, $data) {
 }
 
 function updateProduk($db, $id, $data) {
-    if (!isset($data['nama_produk']) || !isset($data['harga']) || !isset($data['stok']) || !isset($data['kategori_id'])) {
+    $errors = validateProdukData($db, $data);
+    if (!empty($errors)) {
         http_response_code(400);
-        return ['error' => 'Missing required fields: nama_produk, harga, stok, kategori_id'];
+        return ['error' => implode('. ', $errors)];
     }
 
     try {
@@ -141,6 +179,9 @@ function updateProduk($db, $id, $data) {
         $currentStmt = $db->prepare("SELECT gambar FROM tb_produk WHERE id_produk = ?");
         $currentStmt->execute([$id]);
         $currentRow = $currentStmt->fetch(PDO::FETCH_ASSOC);
+        if (!$currentRow) {
+            throw new Exception('Produk tidak ditemukan');
+        }
         $currentImage = $currentRow['gambar'] ?? null;
 
         $uploadedImage = handleFileUpload('gambar');
@@ -148,7 +189,14 @@ function updateProduk($db, $id, $data) {
 
         $stmt = $db->prepare("UPDATE tb_produk SET nama_produk = ?, harga = ?, stok = ?, deskripsi = ?, gambar = ? WHERE id_produk = ?");
         $deskripsi = $data['deskripsi'] ?? '';
-        $stmt->execute([$data['nama_produk'], $data['harga'], $data['stok'], $deskripsi, $gambar, $id]);
+        $stmt->execute([
+            trim($data['nama_produk']),
+            floatval($data['harga']),
+            intval($data['stok']),
+            $deskripsi,
+            $gambar,
+            $id
+        ]);
 
         if ($uploadedImage && $currentImage) {
             $oldFile = __DIR__ . '/uploads/' . $currentImage;
@@ -157,19 +205,12 @@ function updateProduk($db, $id, $data) {
             }
         }
 
-        $kategoriId = $data['kategori_id'];
+        $kategoriId = intval($data['kategori_id']);
         $stmtDelete = $db->prepare("DELETE FROM tb_produk_kategori WHERE id_produk = ?");
         $stmtDelete->execute([$id]);
 
-        if (!empty($kategoriId)) {
-            $stmtCheck = $db->prepare("SELECT COUNT(*) FROM tb_kategori WHERE id_kategori = ?");
-            $stmtCheck->execute([$kategoriId]);
-            if ($stmtCheck->fetchColumn() == 0) {
-                throw new Exception('Kategori tidak ditemukan');
-            }
-            $stmtRelation = $db->prepare("INSERT INTO tb_produk_kategori (id_produk, id_kategori) VALUES (?, ?)");
-            $stmtRelation->execute([$id, $kategoriId]);
-        }
+        $stmtRelation = $db->prepare("INSERT INTO tb_produk_kategori (id_produk, id_kategori) VALUES (?, ?)");
+        $stmtRelation->execute([$id, $kategoriId]);
 
         $db->commit();
         return ['success' => true, 'message' => 'Produk berhasil diupdate'];
