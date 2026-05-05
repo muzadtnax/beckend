@@ -10,11 +10,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 function createConnection() {
-    $dbPath = __DIR__ . '/../data/e_katalog.db';
-    
+    $dbHost = getenv('DB_HOST') ?: 'localhost';
+    $dbName = getenv('DB_NAME') ?: 'e_katalog';
+    $dbUser = getenv('DB_USER') ?: 'root';
+    $dbPass = getenv('DB_PASS') ?: '';
+    $dbCharset = getenv('DB_CHARSET') ?: 'utf8mb4';
+
+    $dsn = "mysql:host=$dbHost;dbname=$dbName;charset=$dbCharset";
+
     try {
-        $db = new PDO("sqlite:$dbPath");
-        $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $db = new PDO($dsn, $dbUser, $dbPass, [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES => false,
+        ]);
         return $db;
     } catch (Exception $e) {
         http_response_code(500);
