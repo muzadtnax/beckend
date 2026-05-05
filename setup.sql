@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS tb_produk_kategori (
 );
 
 -- Insert sample data
-INSERT INTO tb_kategori (jenis_kategori) VALUES ('Elektronik'), ('Makanan'), ('Pakaian');
+INSERT INTO tb_kategori (jenis_kategori) VALUES ('Makanan'), ('Minuman'), ('Lainnya');
 INSERT INTO tb_produk (nama_produk, harga, stok, deskripsi) VALUES 
 ('Laptop HP', 5000000, 10, 'Laptop gaming HP terbaru'),
 ('Keyboard Mekanik', 500000, 25, 'Keyboard RGB mekanik'),
