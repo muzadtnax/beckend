@@ -1,13 +1,21 @@
 // API URL base
 const API_BASE = 'http://localhost:8000/api.php';
 const UPLOAD_BASE = 'http://localhost:8000/uploads';
+const API_KEY = 'ekatalog-secure-token-123'; // Token keamanan dasar
 
 async function requestApi(url, options = {}) {
+  // Setup headers
+  options.headers = options.headers || {};
+  options.headers['X-Api-Key'] = API_KEY;
+
   if (options.body instanceof FormData) {
     if (options.headers) {
       delete options.headers['Content-Type'];
       delete options.headers['content-type'];
     }
+  } else if (!options.headers['Content-Type'] && !(options.body instanceof FormData)) {
+      // Hanya set JSON jika bukan FormData
+      options.headers['Content-Type'] = 'application/json';
   }
 
   try {
@@ -157,8 +165,18 @@ function updateImagePreview(fileOrUrl) {
   reader.readAsDataURL(fileOrUrl);
 }
 
-async function displayProduk() {
-  const produk = await fetchAllProduk();
+// State untuk menyimpan semua produk agar tidak perlu fetch berulang kali saat filter
+let allProductsCache = null;
+
+async function displayProduk(kategoriId = null) {
+  let produk = allProductsCache;
+  if (!produk) {
+    produk = await fetchAllProduk();
+    if (!produk.error) {
+      allProductsCache = produk;
+    }
+  }
+
   const container = document.getElementById('produk-container');
   if (!container) return;
 
@@ -167,12 +185,17 @@ async function displayProduk() {
     return;
   }
 
-  if (!produk.length) {
+  let filteredProduk = produk;
+  if (kategoriId) {
+    filteredProduk = produk.filter(p => p.kategori_id == kategoriId);
+  }
+
+  if (!filteredProduk.length) {
     container.innerHTML = '<div class="col-12"><p class="text-center text-muted">Belum ada produk.</p></div>';
     return;
   }
 
-  container.innerHTML = produk.map(item => {
+  container.innerHTML = filteredProduk.map(item => {
     const kategori = item.jenis_kategori ? item.jenis_kategori : 'Tanpa kategori';
     const imageUrl = item.gambar ? `${UPLOAD_BASE}/${item.gambar}` : 'images/logo.png';
     return `
@@ -201,6 +224,31 @@ async function displayProduk() {
   }).join('');
 }
 
+async function populateKategoriFilter() {
+  const kategori = await fetchAllKategori();
+  const menu = document.getElementById('filter-kategori-menu');
+  if (!menu) return;
+
+  if (kategori.error) {
+    return;
+  }
+
+  // Tambahkan Semua Kategori sebagai default
+  let html = `<li><a class="dropdown-item" href="#" onclick="filterProduk(null, 'Semua Kategori')">Semua Kategori</a></li>`;
+  
+  html += kategori.map(k => `<li><a class="dropdown-item" href="#" onclick="filterProduk('${k.id_kategori}', '${k.jenis_kategori}')">${k.jenis_kategori}</a></li>`).join('');
+  
+  menu.innerHTML = html;
+}
+
+function filterProduk(kategoriId, namaKategori) {
+  const btn = document.getElementById('btn-kategori-dropdown');
+  if (btn) {
+    btn.textContent = namaKategori;
+  }
+  displayProduk(kategoriId);
+}
+
 async function handleDeleteProduk(id) {
   if (!confirm('Yakin ingin menghapus produk ini?')) {
     return;
@@ -208,6 +256,7 @@ async function handleDeleteProduk(id) {
   const result = await deleteProduk(id);
   if (result.success) {
     alert('Produk berhasil dihapus');
+    allProductsCache = null;
     displayProduk();
   } else {
     alert('Gagal hapus produk: ' + result.error);
@@ -288,6 +337,9 @@ async function loadProdukForEdit() {
     return;
   }
 
+  // Simpan ID secara global agar bisa digunakan saat proses update dan delete
+  window.currentEditId = id;
+
   const produk = await fetchProdukById(id);
   console.log('API Response:', produk);
   
@@ -347,7 +399,7 @@ async function loadProdukForEdit() {
 async function handleUpdateProduk(event) {
   event.preventDefault();
   const params = new URLSearchParams(window.location.search);
-  const id = params.get('id');
+  const id = params.get('id') || window.currentEditId || sessionStorage.getItem('editProductId');
 
   if (!id) {
     alert('ID produk tidak ditemukan');
@@ -373,6 +425,7 @@ async function handleUpdateProduk(event) {
   }
 
   const formData = new FormData();
+  formData.append('id', id);
   formData.append('nama_produk', nama);
   formData.append('harga', harga);
   formData.append('stok', stok);

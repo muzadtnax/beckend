@@ -1,13 +1,52 @@
 <?php
+// === KONFIGURASI KEAMANAN DASAR (RESTRIKSI AKSES) ===
+$allowed_origins = [
+    // === DOMAIN PRODUKSI (Tambahkan domain Anda nanti di sini) ===
+    'https://e-katalog-frontend-saya.com',
+    'https://www.e-katalog-frontend-saya.com',
+    
+    // === DOMAIN DEVELOPMENT (Lokal) ===
+    'http://localhost:3000', 
+    'http://localhost:5000', 
+    'http://127.0.0.1:3000', 
+    'http://127.0.0.1:5000',
+    'http://localhost:8000' 
+];
+
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+
+// Jika tidak ada origin (misal ditembak langsung via CURL/Postman tanpa origin header)
+// atau Origin terdaftar di whitelist, kita izinkan.
+if ($origin === '' || in_array($origin, $allowed_origins)) {
+    if ($origin !== '') {
+        header("Access-Control-Allow-Origin: $origin");
+    }
+} else {
+    // Jika Origin dari website antah berantah, TOLAK langsung di level CORS
+    http_response_code(403);
+    echo json_encode(['error' => 'CORS Policy: Akses dari domain ini ditolak.']);
+    exit();
+}
+
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
+header('Access-Control-Allow-Headers: Content-Type, X-Api-Key');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit();
 }
+
+// Token Rahasia API
+define('API_SECRET_KEY', 'ekatalog-secure-token-123');
+$apiKey = $_SERVER['HTTP_X_API_KEY'] ?? $_GET['api_key'] ?? $_POST['api_key'] ?? '';
+
+if ($apiKey !== API_SECRET_KEY) {
+    http_response_code(401);
+    echo json_encode(['error' => 'Akses ditolak: API Key tidak valid.']);
+    exit();
+}
+// ===================================================
 
 function createConnection() {
     $dbHost = getenv('DB_HOST') ?: 'localhost';
@@ -285,7 +324,7 @@ if ($method === 'GET') {
     if ($action === 'addProduk') {
         echo json_encode(addProduk($db, $input));
     } else if ($action === 'updateProduk') {
-        $id = $_GET['id'] ?? null;
+        $id = $_GET['id'] ?? $input['id'] ?? $_POST['id'] ?? null;
         if ($id) {
             echo json_encode(updateProduk($db, $id, $input));
         } else {
@@ -298,7 +337,7 @@ if ($method === 'GET') {
     }
 } else if ($method === 'PUT') {
     $input = json_decode(file_get_contents('php://input'), true);
-    $id = $_GET['id'] ?? null;
+    $id = $_GET['id'] ?? $input['id'] ?? null;
     if ($action === 'updateProduk' && $id) {
         echo json_encode(updateProduk($db, $id, $input));
     } else {

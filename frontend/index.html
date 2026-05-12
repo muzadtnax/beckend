@@ -19,13 +19,12 @@
 
             <div class="ms-auto d-flex align-items-center gap-2">
                 <div class="dropdown">
-                    <button class="btn btn-outline-dark rounded-pill dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                        Kategori
+                    <button class="btn btn-outline-dark rounded-pill dropdown-toggle" type="button" data-bs-toggle="dropdown" id="btn-kategori-dropdown">
+                        Semua Kategori
                     </button>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#">Makanan</a></li>
-                        <li><a class="dropdown-item" href="#">Minuman</a></li>
-                        <li><a class="dropdown-item" href="#">Lainnya</a></li>
+                    <ul class="dropdown-menu" id="filter-kategori-menu">
+                        <li><a class="dropdown-item" href="#" onclick="filterProduk(null, 'Semua Kategori')">Semua Kategori</a></li>
+                        <!-- Kategori dimuat dinamis di sini -->
                     </ul>
                 </div>
                 <a href="add.html" class="btn btn-dark rounded-pill px-4 fw-bold">Add Produk</a>
@@ -100,8 +99,11 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/api.js"></script>
     <script>
-        // Load produk saat halaman dibuka
-        document.addEventListener('DOMContentLoaded', () => {
+        // Load produk dan kategori saat halaman dibuka
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (typeof populateKategoriFilter === 'function') {
+                await populateKategoriFilter();
+            }
             displayProduk();
         });
     </script>
