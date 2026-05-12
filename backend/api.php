@@ -70,7 +70,7 @@ function fetchKategori($db) {
 
 function fetchProduk($db) {
     try {
-        $stmt = $db->query("SELECT p.id_produk, p.nama_produk, p.harga, p.stok, p.deskripsi, p.gambar, k.id_kategori AS kategori_id, k.jenis_kategori FROM tb_produk p LEFT JOIN tb_produk_kategori pk ON p.id_produk = pk.id_produk LEFT JOIN tb_kategori k ON pk.id_kategori = k.id_kategori ORDER BY p.id_produk ASC");
+        $stmt = $db->query("SELECT p.id_produk, p.nama_produk, p.harga, p.stok, p.deskripsi, p.gambar, k.id_kategori AS kategori_id, k.jenis_kategori FROM tb_produk p LEFT JOIN tb_produk_kategori pk ON p.id_produk = pk.id_produk LEFT JOIN tb_kategori k ON pk.id_kategori = k.id_kategori ORDER BY p.id_produk DESC");
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     } catch (Exception $e) {
         return ['error' => $e->getMessage()];
