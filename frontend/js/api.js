@@ -292,20 +292,22 @@ async function handleAddProduk(event) {
     formData.append('deskripsi', deskripsi);
   }
 
-  // Cek apakah ada file yang dipilih
-  if (gambarInput && gambarInput.files && gambarInput.files.length > 0) {
-    formData.append('gambar', gambarInput.files[0]);
-  }
-
-  // Cek apakah ada foto dari kamera (canvas blob)
-  const cameraCanvas = document.getElementById('camera-canvas');
-  if (cameraCanvas && cameraCanvas.width > 0 && !(gambarInput && gambarInput.files && gambarInput.files.length > 0)) {
-    await new Promise(resolve => {
-      cameraCanvas.toBlob(blob => {
-        if (blob) formData.append('gambar', blob, 'foto-kamera.jpg');
-        resolve();
-      }, 'image/jpeg', 0.85);
-    });
+  // Prioritas: hasil crop → file input → kamera canvas
+  const blob = typeof getCroppedBlob === 'function' ? getCroppedBlob() : null;
+  if (blob) {
+    formData.append('gambar', blob, 'produk.jpg');
+  } else {
+    const gambarInput = document.getElementById('input-file') || document.getElementById('gambar-produk');
+    if (gambarInput && gambarInput.files && gambarInput.files.length > 0) {
+      formData.append('gambar', gambarInput.files[0]);
+    } else {
+      const cameraCanvas = document.getElementById('camera-canvas');
+      if (cameraCanvas && cameraCanvas.width > 0) {
+        await new Promise(resolve => {
+          cameraCanvas.toBlob(b => { if (b) formData.append('gambar', b, 'foto-kamera.jpg'); resolve(); }, 'image/jpeg', 0.85);
+        });
+      }
+    }
   }
 
   const result = await addProduk(formData);
@@ -382,6 +384,20 @@ async function loadProdukForEdit() {
   }
 
   // Tampilkan gambar existing
+  if (produk.gambar) {
+    const url = `${UPLOAD_BASE}/${produk.gambar}`;
+    if (typeof setPreviewFromUrl === 'function') {
+      setPreviewFromUrl(url);
+    } else {
+      const imgPreview = document.getElementById('img-preview');
+      const imgPlaceholder = document.getElementById('img-placeholder');
+      const btnRemove = document.getElementById('btn-remove-img');
+      if (imgPreview) {
+        imgPreview.src = url;
+        imgPreview.style.display = 'block';
+        if (imgPlaceholder) imgPlaceholder.style.display = 'none';
+        if (btnRemove) btnRemove.style.display = 'flex';
+      }
   if (product.gambar) {
     const imgPreview = document.getElementById('img-preview');
     const imgPlaceholder = document.getElementById('img-placeholder');
@@ -434,19 +450,22 @@ async function handleUpdateProduk(event) {
     formData.append('deskripsi', deskripsi);
   }
 
-  if (gambarInput && gambarInput.files && gambarInput.files.length > 0) {
-    formData.append('gambar', gambarInput.files[0]);
-  }
-
-  // Cek foto dari kamera
-  const cameraCanvas = document.getElementById('camera-canvas');
-  if (cameraCanvas && cameraCanvas.width > 0 && !(gambarInput && gambarInput.files && gambarInput.files.length > 0)) {
-    await new Promise(resolve => {
-      cameraCanvas.toBlob(blob => {
-        if (blob) formData.append('gambar', blob, 'foto-kamera.jpg');
-        resolve();
-      }, 'image/jpeg', 0.85);
-    });
+  // Prioritas: hasil crop → file input → kamera canvas
+  const blob = typeof getCroppedBlob === 'function' ? getCroppedBlob() : null;
+  if (blob) {
+    formData.append('gambar', blob, 'produk.jpg');
+  } else {
+    const gambarInput = document.getElementById('input-file') || document.getElementById('gambar-produk');
+    if (gambarInput && gambarInput.files && gambarInput.files.length > 0) {
+      formData.append('gambar', gambarInput.files[0]);
+    } else {
+      const cameraCanvas = document.getElementById('camera-canvas');
+      if (cameraCanvas && cameraCanvas.width > 0) {
+        await new Promise(resolve => {
+          cameraCanvas.toBlob(b => { if (b) formData.append('gambar', b, 'foto-kamera.jpg'); resolve(); }, 'image/jpeg', 0.85);
+        });
+      }
+    }
   }
 
   const result = await updateProduk(id, formData);
