@@ -1,13 +1,21 @@
 // API URL base
 const API_BASE = 'http://localhost:8000/api.php';
 const UPLOAD_BASE = 'http://localhost:8000/uploads';
+const API_KEY = 'ekatalog-secure-token-123'; // Token keamanan dasar
 
 async function requestApi(url, options = {}) {
+  // Setup headers
+  options.headers = options.headers || {};
+  options.headers['X-Api-Key'] = API_KEY;
+
   if (options.body instanceof FormData) {
     if (options.headers) {
       delete options.headers['Content-Type'];
       delete options.headers['content-type'];
     }
+  } else if (!options.headers['Content-Type'] && !(options.body instanceof FormData)) {
+      // Hanya set JSON jika bukan FormData
+      options.headers['Content-Type'] = 'application/json';
   }
 
   try {
@@ -78,6 +86,64 @@ function formatRupiah(value) {
   }).format(value);
 }
 
+function formatDate(dateString) {
+  if (!dateString) return '-';
+  const date = new Date(dateString);
+  return date.toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
+async function showDetailModal(id) {
+  const produk = await fetchProdukById(id);
+  
+  if (produk.error) {
+    alert('Gagal memuat detail produk');
+    return;
+  }
+
+  // Ambil data produk (bisa berupa object atau array)
+  const product = Array.isArray(produk) ? produk[0] : produk;
+  if (!product) {
+    alert('Produk tidak ditemukan');
+    return;
+  }
+
+  console.log('showDetailModal - Product ID:', product.id_produk);
+
+  // Isi modal dengan data
+  document.getElementById('modalTitle').textContent = product.nama_produk;
+  document.getElementById('detailNama').textContent = product.nama_produk;
+  document.getElementById('detailKategori').textContent = product.jenis_kategori || 'Tanpa kategori';
+  document.getElementById('detailHarga').textContent = formatRupiah(product.harga);
+  document.getElementById('detailStok').textContent = product.stok + ' unit';
+  document.getElementById('detailDeskripsi').textContent = product.deskripsi || 'Tidak ada deskripsi';
+  document.getElementById('detailCreated').textContent = formatDate(product.created_at);
+  document.getElementById('detailUpdated').textContent = formatDate(product.updated_at);
+  
+  // Set gambar
+  const imageUrl = product.gambar ? `${UPLOAD_BASE}/${product.gambar}` : 'images/logo.png';
+  document.getElementById('detailImage').src = imageUrl;
+  
+  // Set href tombol edit dengan URL yang benar
+  const editBtn = document.getElementById('editBtn');
+  if (editBtn) {
+    editBtn.href = `update.html?id=${product.id_produk}`;
+    editBtn.dataset.productId = product.id_produk;
+    sessionStorage.setItem('editProductId', product.id_produk);
+    console.log('Edit button href set to:', editBtn.href);
+    console.log('SessionStorage editProductId set to:', sessionStorage.getItem('editProductId'));
+  }
+  
+  // Tampilkan modal
+  const modal = new bootstrap.Modal(document.getElementById('detailModal'));
+  modal.show();
+}
+
 function updateImagePreview(fileOrUrl) {
   const preview = document.getElementById('image-preview');
   if (!preview) return;
@@ -99,8 +165,18 @@ function updateImagePreview(fileOrUrl) {
   reader.readAsDataURL(fileOrUrl);
 }
 
-async function displayProduk() {
-  const produk = await fetchAllProduk();
+// State untuk menyimpan semua produk agar tidak perlu fetch berulang kali saat filter
+let allProductsCache = null;
+
+async function displayProduk(kategoriId = null) {
+  let produk = allProductsCache;
+  if (!produk) {
+    produk = await fetchAllProduk();
+    if (!produk.error) {
+      allProductsCache = produk;
+    }
+  }
+
   const container = document.getElementById('produk-container');
   if (!container) return;
 
@@ -109,12 +185,17 @@ async function displayProduk() {
     return;
   }
 
-  if (!produk.length) {
+  let filteredProduk = produk;
+  if (kategoriId) {
+    filteredProduk = produk.filter(p => p.kategori_id == kategoriId);
+  }
+
+  if (!filteredProduk.length) {
     container.innerHTML = '<div class="col-12"><p class="text-center text-muted">Belum ada produk.</p></div>';
     return;
   }
 
-  container.innerHTML = produk.map(item => {
+  container.innerHTML = filteredProduk.map(item => {
     const kategori = item.jenis_kategori ? item.jenis_kategori : 'Tanpa kategori';
     const imageUrl = item.gambar ? `${UPLOAD_BASE}/${item.gambar}` : 'images/logo.png';
     return `
@@ -129,10 +210,10 @@ async function displayProduk() {
             <div class="product-stock"><i class="bi bi-box-seam me-1"></i>Stok: ${item.stok}</div>
             <div class="product-price">${formatRupiah(item.harga)}</div>
             <div class="product-actions">
-              <a href="update.html?id=${item.id_produk}" class="btn-update">
-                <i class="bi bi-pencil me-1"></i>Edit
-              </a>
-              <button class="btn-hapus" onclick="handleDeleteProduk('${item.id_produk}')">
+              <button class="btn-update" onclick="showDetailModal('${item.id_produk}')">
+                <i class="bi bi-eye me-1"></i>Detail
+              </button>
+              <button class="btn-hapus" onclick="handleDeleteProduk('${item.id_produk}')" title="Hapus Produk">
                 <i class="bi bi-trash"></i>
               </button>
             </div>
@@ -143,6 +224,31 @@ async function displayProduk() {
   }).join('');
 }
 
+async function populateKategoriFilter() {
+  const kategori = await fetchAllKategori();
+  const menu = document.getElementById('filter-kategori-menu');
+  if (!menu) return;
+
+  if (kategori.error) {
+    return;
+  }
+
+  // Tambahkan Semua Kategori sebagai default
+  let html = `<li><a class="dropdown-item" href="#" onclick="filterProduk(null, 'Semua Kategori')">Semua Kategori</a></li>`;
+  
+  html += kategori.map(k => `<li><a class="dropdown-item" href="#" onclick="filterProduk('${k.id_kategori}', '${k.jenis_kategori}')">${k.jenis_kategori}</a></li>`).join('');
+  
+  menu.innerHTML = html;
+}
+
+function filterProduk(kategoriId, namaKategori) {
+  const btn = document.getElementById('btn-kategori-dropdown');
+  if (btn) {
+    btn.textContent = namaKategori;
+  }
+  displayProduk(kategoriId);
+}
+
 async function handleDeleteProduk(id) {
   if (!confirm('Yakin ingin menghapus produk ini?')) {
     return;
@@ -150,6 +256,7 @@ async function handleDeleteProduk(id) {
   const result = await deleteProduk(id);
   if (result.success) {
     alert('Produk berhasil dihapus');
+    allProductsCache = null;
     displayProduk();
   } else {
     alert('Gagal hapus produk: ' + result.error);
@@ -166,6 +273,7 @@ async function handleAddProduk(event) {
 
   const stok = parseInt(document.getElementById('stok-produk').value, 10);
   const kategori_id = document.getElementById('kategori-produk').value;
+  const deskripsi = document.getElementById('deskripsi-produk').value.trim();
 
   // Coba baca dari input-file (add.html baru) atau gambar-produk (fallback)
   const gambarInput = document.getElementById('input-file') || document.getElementById('gambar-produk');
@@ -180,6 +288,9 @@ async function handleAddProduk(event) {
   formData.append('harga', harga);
   formData.append('stok', stok);
   formData.append('kategori_id', kategori_id);
+  if (deskripsi) {
+    formData.append('deskripsi', deskripsi);
+  }
 
   // Prioritas: hasil crop → file input → kamera canvas
   const blob = typeof getCroppedBlob === 'function' ? getCroppedBlob() : null;
@@ -211,29 +322,65 @@ async function handleAddProduk(event) {
 
 async function loadProdukForEdit() {
   const params = new URLSearchParams(window.location.search);
-  const id = params.get('id');
-  if (!id) return;
+  let id = params.get('id');
+  console.log('loadProdukForEdit - ID dari URL:', id);
+
+  if (!id) {
+    id = sessionStorage.getItem('editProductId');
+    console.log('loadProdukForEdit - ID dari sessionStorage:', id);
+    if (id) {
+      sessionStorage.removeItem('editProductId');
+    }
+  }
+
+  if (!id) {
+    alert('ID Produk tidak ditemukan di URL! Kembali ke halaman utama.');
+    window.location.href = 'index.html';
+    return;
+  }
+
+  // Simpan ID secara global agar bisa digunakan saat proses update dan delete
+  window.currentEditId = id;
 
   const produk = await fetchProdukById(id);
+  console.log('API Response:', produk);
+  
   if (!produk || produk.error) {
     alert(produk?.error || 'Produk tidak ditemukan');
     return;
   }
 
-  document.getElementById('nama-produk').value = produk.nama_produk || '';
-  document.getElementById('stok-produk').value = produk.stok || '';
+  // Handle jika API mengembalikan array
+  const product = Array.isArray(produk) ? produk[0] : produk;
+  
+  if (!product) {
+    alert('Data produk kosong');
+    console.error('Product data is empty', produk);
+    return;
+  }
+
+  console.log('Product data:', product);
+
+  document.getElementById('nama-produk').value = product.nama_produk || '';
+  document.getElementById('stok-produk').value = product.stok || '';
+  document.getElementById('deskripsi-produk').value = product.deskripsi || '';
 
   // Format harga dengan titik setiap 3 digit
   const hargaEl = document.getElementById('harga-produk');
-  if (hargaEl && produk.harga) {
-    const raw = String(Math.round(produk.harga));
+  if (hargaEl && product.harga) {
+    const raw = String(Math.round(product.harga));
     hargaEl.value = raw.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
   }
 
-  // Set kategori
-  if (produk.kategori_id) {
+  // Set kategori - tunggu category dropdown siap
+  if (product.kategori_id) {
     const select = document.getElementById('kategori-produk');
-    if (select) select.value = produk.kategori_id;
+    if (select) {
+      select.value = product.kategori_id;
+      console.log('Kategori set ke:', product.kategori_id);
+    } else {
+      console.warn('Kategori select element tidak ditemukan');
+    }
   }
 
   // Tampilkan gambar existing
@@ -251,6 +398,16 @@ async function loadProdukForEdit() {
         if (imgPlaceholder) imgPlaceholder.style.display = 'none';
         if (btnRemove) btnRemove.style.display = 'flex';
       }
+  if (product.gambar) {
+    const imgPreview = document.getElementById('img-preview');
+    const imgPlaceholder = document.getElementById('img-placeholder');
+    const btnRemove = document.getElementById('btn-remove-img');
+    if (imgPreview) {
+      imgPreview.src = `${UPLOAD_BASE}/${product.gambar}`;
+      imgPreview.style.display = 'block';
+      if (imgPlaceholder) imgPlaceholder.style.display = 'none';
+      if (btnRemove) btnRemove.style.display = 'flex';
+      console.log('Gambar dimuat:', product.gambar);
     }
   }
 }
@@ -258,7 +415,7 @@ async function loadProdukForEdit() {
 async function handleUpdateProduk(event) {
   event.preventDefault();
   const params = new URLSearchParams(window.location.search);
-  const id = params.get('id');
+  const id = params.get('id') || window.currentEditId || sessionStorage.getItem('editProductId');
 
   if (!id) {
     alert('ID produk tidak ditemukan');
@@ -273,6 +430,7 @@ async function handleUpdateProduk(event) {
 
   const stok = parseInt(document.getElementById('stok-produk').value, 10);
   const kategori_id = document.getElementById('kategori-produk').value;
+  const deskripsi = document.getElementById('deskripsi-produk').value.trim();
 
   // Coba baca dari input-file (update.html baru) atau gambar-produk (fallback)
   const gambarInput = document.getElementById('input-file') || document.getElementById('gambar-produk');
@@ -283,10 +441,14 @@ async function handleUpdateProduk(event) {
   }
 
   const formData = new FormData();
+  formData.append('id', id);
   formData.append('nama_produk', nama);
   formData.append('harga', harga);
   formData.append('stok', stok);
   formData.append('kategori_id', kategori_id);
+  if (deskripsi) {
+    formData.append('deskripsi', deskripsi);
+  }
 
   // Prioritas: hasil crop → file input → kamera canvas
   const blob = typeof getCroppedBlob === 'function' ? getCroppedBlob() : null;
