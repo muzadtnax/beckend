@@ -226,6 +226,9 @@ function updateProduk($db, $id, $data) {
         $uploadedImage = handleFileUpload('gambar');
         $gambar = $uploadedImage ?: $currentImage;
 
+        // Debug logging
+        error_log("Update Produk ID: $id | Current Image: " . ($currentImage ?? 'NULL') . " | Uploaded: " . ($uploadedImage ?? 'NULL') . " | Final: " . ($gambar ?? 'NULL'));
+
         $stmt = $db->prepare("UPDATE tb_produk SET nama_produk = ?, harga = ?, stok = ?, deskripsi = ?, gambar = ? WHERE id_produk = ?");
         $deskripsi = $data['deskripsi'] ?? '';
         $stmt->execute([

@@ -99,7 +99,10 @@ function confirmCrop() {
         croppedBlob = blob;
         const url = URL.createObjectURL(blob);
         showPreview(url);
-        closeCropModal();
+        // Tutup modal TANPA reset croppedBlob
+        if (cropperInstance) { cropperInstance.destroy(); cropperInstance = null; }
+        document.getElementById('crop-modal').style.display = 'none';
+        inputFile.value = '';
     }, 'image/jpeg', 0.88);
 }
 
@@ -107,6 +110,7 @@ function closeCropModal() {
     if (cropperInstance) { cropperInstance.destroy(); cropperInstance = null; }
     document.getElementById('crop-modal').style.display = 'none';
     inputFile.value = '';
+    croppedBlob = null; // Reset blob HANYA saat cancel
 }
 
 function showPreview(src) {

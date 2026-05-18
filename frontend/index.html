@@ -19,18 +19,11 @@
             </a>
             <div style="display:flex;align-items:center;gap:8px;">
                 <div class="dropdown">
-                    <button class="btn btn-outline-dark dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                        <i class="bi bi-grid me-1"></i>Kategori
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a class="dropdown-item" href="#"><i class="bi bi-egg-fried me-2"></i>Makanan</a></li>
-                        <li><a class="dropdown-item" href="#"><i class="bi bi-cup-straw me-2"></i>Minuman</a></li>
-                        <li><a class="dropdown-item" href="#"><i class="bi bi-bag me-2"></i>Lainnya</a></li>
                     <button class="btn btn-outline-dark rounded-pill dropdown-toggle" type="button" data-bs-toggle="dropdown" id="btn-kategori-dropdown">
-                        Semua Kategori
+                        <i class="bi bi-grid me-1"></i>Semua Kategori
                     </button>
-                    <ul class="dropdown-menu" id="filter-kategori-menu">
-                        <li><a class="dropdown-item" href="#" onclick="filterProduk(null, 'Semua Kategori')">Semua Kategori</a></li>
+                    <ul class="dropdown-menu dropdown-menu-end" id="filter-kategori-menu">
+                        <li><a class="dropdown-item active" href="#" onclick="filterProduk(null, 'Semua Kategori')">Semua Kategori</a></li>
                         <!-- Kategori dimuat dinamis di sini -->
                     </ul>
                 </div>
@@ -44,8 +37,16 @@
     <!-- CONTENT -->
     <div class="container">
         <div class="page-header">
-            <h4 class="page-title">Semua Produk</h4>
-            <span class="page-count" id="produk-count"></span>
+            <div>
+                <h4 class="page-title" id="page-title">Semua Produk</h4>
+                <span class="page-count" id="produk-count"></span>
+            </div>
+            <!-- Category Pills Wrapper -->
+            <div class="category-pills-wrapper">
+                <div class="category-pills" id="category-pills-container">
+                    <button class="btn-pill active" onclick="filterProduk(null, 'Semua Kategori', this)">Semua Kategori</button>
+                </div>
+            </div>
         </div>
         <div class="row g-3" id="produk-container">
             <div class="col-12 state-empty">Memuat produk...</div>
@@ -68,7 +69,7 @@
                     <div class="row g-4">
                         <div class="col-md-6">
                             <div class="detail-image-wrapper">
-                                <img id="detailImage" src="" alt="Produk" class="detail-image">
+                                <img id="detailImage" src="" alt="Produk" class="detail-image" onerror="this.onerror=null;this.src='images/logo.png';this.style.opacity='0.5'">
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -114,20 +115,18 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="js/api.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
+            if (typeof populateKategoriFilter === 'function') {
+                await populateKategoriFilter();
+            }
             await displayProduk();
             const items = document.querySelectorAll('#produk-container .col-6');
             if (items.length) {
                 document.getElementById('produk-count').textContent = items.length + ' produk';
             }
-        // Load produk dan kategori saat halaman dibuka
-        document.addEventListener('DOMContentLoaded', async () => {
-            if (typeof populateKategoriFilter === 'function') {
-                await populateKategoriFilter();
-            }
-            displayProduk();
         });
     </script>
 </body>

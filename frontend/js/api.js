@@ -102,14 +102,14 @@ async function showDetailModal(id) {
   const produk = await fetchProdukById(id);
   
   if (produk.error) {
-    alert('Gagal memuat detail produk');
+    Swal.fire({ icon: 'error', title: 'Oops...', text: 'Gagal memuat detail produk', background: '#1a1a1a', color: '#fff', confirmButtonColor: '#ff4d4d' });
     return;
   }
 
   // Ambil data produk (bisa berupa object atau array)
   const product = Array.isArray(produk) ? produk[0] : produk;
   if (!product) {
-    alert('Produk tidak ditemukan');
+    Swal.fire({ icon: 'warning', title: 'Oops...', text: 'Produk tidak ditemukan', background: '#1a1a1a', color: '#fff', confirmButtonColor: '#f39c12' });
     return;
   }
 
@@ -127,7 +127,9 @@ async function showDetailModal(id) {
   
   // Set gambar
   const imageUrl = product.gambar ? `${UPLOAD_BASE}/${product.gambar}` : 'images/logo.png';
-  document.getElementById('detailImage').src = imageUrl;
+  const detailImg = document.getElementById('detailImage');
+  detailImg.onerror = function() { this.onerror = null; this.src = 'images/logo.png'; this.style.opacity = '0.5'; };
+  detailImg.src = imageUrl;
   
   // Set href tombol edit dengan URL yang benar
   const editBtn = document.getElementById('editBtn');
@@ -142,27 +144,6 @@ async function showDetailModal(id) {
   // Tampilkan modal
   const modal = new bootstrap.Modal(document.getElementById('detailModal'));
   modal.show();
-}
-
-function updateImagePreview(fileOrUrl) {
-  const preview = document.getElementById('image-preview');
-  if (!preview) return;
-
-  if (!fileOrUrl) {
-    preview.innerHTML = '<div class="image-placeholder"><div class="placeholder-icon">🖼️</div><div class="placeholder-text">Belum ada gambar</div></div>';
-    return;
-  }
-
-  if (typeof fileOrUrl === 'string') {
-    preview.innerHTML = `<img src="${fileOrUrl}" alt="Preview Gambar" class="preview-img">`;
-    return;
-  }
-
-  const reader = new FileReader();
-  reader.onload = () => {
-    preview.innerHTML = `<img src="${reader.result}" alt="Preview Gambar" class="preview-img">`;
-  };
-  reader.readAsDataURL(fileOrUrl);
 }
 
 // State untuk menyimpan semua produk agar tidak perlu fetch berulang kali saat filter
@@ -202,7 +183,7 @@ async function displayProduk(kategoriId = null) {
       <div class="col-6 col-md-4 col-lg-3">
         <div class="product-card h-100">
           <div class="img-wrapper">
-            <img src="${imageUrl}" alt="${item.nama_produk}" loading="lazy">
+            <img src="${imageUrl}" alt="${item.nama_produk}" loading="lazy" onerror="this.onerror=null;this.src='images/logo.png';this.style.opacity='0.5'">
           </div>
           <div class="card-body">
             <span class="product-kategori">${kategori}</span>
@@ -227,59 +208,100 @@ async function displayProduk(kategoriId = null) {
 async function populateKategoriFilter() {
   const kategori = await fetchAllKategori();
   const menu = document.getElementById('filter-kategori-menu');
-  if (!menu) return;
+  const pillsContainer = document.getElementById('category-pills-container');
+  
+  if (kategori.error) return;
 
-  if (kategori.error) {
-    return;
+  // Untuk dropdown navbar
+  if (menu) {
+    let html = `<li><a class="dropdown-item" href="#" onclick="filterProduk(null, 'Semua Kategori', null)">Semua Kategori</a></li>`;
+    html += kategori.map(k => `<li><a class="dropdown-item" href="#" onclick="filterProduk('${k.id_kategori}', '${k.jenis_kategori}', null)">${k.jenis_kategori}</a></li>`).join('');
+    menu.innerHTML = html;
   }
 
-  // Tambahkan Semua Kategori sebagai default
-  let html = `<li><a class="dropdown-item" href="#" onclick="filterProduk(null, 'Semua Kategori')">Semua Kategori</a></li>`;
-  
-  html += kategori.map(k => `<li><a class="dropdown-item" href="#" onclick="filterProduk('${k.id_kategori}', '${k.jenis_kategori}')">${k.jenis_kategori}</a></li>`).join('');
-  
-  menu.innerHTML = html;
+  // Untuk pills horizontal
+  if (pillsContainer) {
+    let pillsHtml = `<button class="btn-pill active" onclick="filterProduk(null, 'Semua Kategori', this)">Semua Kategori</button>`;
+    pillsHtml += kategori.map(k => `<button class="btn-pill" onclick="filterProduk('${k.id_kategori}', '${k.jenis_kategori}', this)">${k.jenis_kategori}</button>`).join('');
+    pillsContainer.innerHTML = pillsHtml;
+  }
 }
 
-function filterProduk(kategoriId, namaKategori) {
+function filterProduk(kategoriId, namaKategori, clickedElement = null) {
   const btn = document.getElementById('btn-kategori-dropdown');
   if (btn) {
-    btn.textContent = namaKategori;
+    btn.innerHTML = `<i class="bi bi-grid me-1"></i>${namaKategori}`;
   }
+  
+  if (clickedElement && clickedElement.classList.contains('btn-pill')) {
+      const pills = document.querySelectorAll('.btn-pill');
+      pills.forEach(p => p.classList.remove('active'));
+      clickedElement.classList.add('active');
+  } else if (!clickedElement) {
+      // Jika dari dropdown, coba cari pill yang sesuai
+      const pills = document.querySelectorAll('.btn-pill');
+      pills.forEach(p => {
+          if(p.textContent === namaKategori) p.classList.add('active');
+          else p.classList.remove('active');
+      });
+  }
+
   displayProduk(kategoriId);
 }
 
 async function handleDeleteProduk(id) {
-  if (!confirm('Yakin ingin menghapus produk ini?')) {
+  const confirmResult = await Swal.fire({
+    title: 'Hapus Produk?',
+    text: "Produk ini akan dihapus permanen!",
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#ff4d4d',
+    cancelButtonColor: '#1e1e1e',
+    confirmButtonText: 'Ya, hapus!',
+    cancelButtonText: 'Batal',
+    background: '#1a1a1a',
+    color: '#fff'
+  });
+
+  if (!confirmResult.isConfirmed) {
     return;
   }
+  
   const result = await deleteProduk(id);
   if (result.success) {
-    alert('Produk berhasil dihapus');
+    await Swal.fire({
+      icon: 'success',
+      title: 'Terhapus!',
+      text: 'Produk berhasil dihapus.',
+      background: '#1a1a1a',
+      color: '#fff',
+      confirmButtonColor: '#00a876'
+    });
     allProductsCache = null;
     displayProduk();
   } else {
-    alert('Gagal hapus produk: ' + result.error);
+    Swal.fire({
+      icon: 'error',
+      title: 'Gagal',
+      text: 'Gagal hapus produk: ' + result.error,
+      background: '#1a1a1a',
+      color: '#fff',
+      confirmButtonColor: '#ff4d4d'
+    });
   }
 }
 
 async function handleAddProduk(event) {
   event.preventDefault();
   const nama = document.getElementById('nama-produk').value.trim();
-
-  // Strip titik pemisah ribuan sebelum parse
   const hargaRaw = document.getElementById('harga-produk').value.replace(/\./g, '');
   const harga = parseFloat(hargaRaw);
-
   const stok = parseInt(document.getElementById('stok-produk').value, 10);
   const kategori_id = document.getElementById('kategori-produk').value;
   const deskripsi = document.getElementById('deskripsi-produk').value.trim();
 
-  // Coba baca dari input-file (add.html baru) atau gambar-produk (fallback)
-  const gambarInput = document.getElementById('input-file') || document.getElementById('gambar-produk');
-
   if (!nama || isNaN(harga) || isNaN(stok) || !kategori_id) {
-    alert('Nama, harga, stok, dan kategori harus diisi dengan benar.');
+    Swal.fire({ icon: 'warning', title: 'Perhatian', text: 'Nama, harga, stok, dan kategori harus diisi dengan benar.', background: '#1a1a1a', color: '#fff', confirmButtonColor: '#f39c12' });
     return;
   }
 
@@ -288,35 +310,22 @@ async function handleAddProduk(event) {
   formData.append('harga', harga);
   formData.append('stok', stok);
   formData.append('kategori_id', kategori_id);
-  if (deskripsi) {
-    formData.append('deskripsi', deskripsi);
-  }
+  if (deskripsi) formData.append('deskripsi', deskripsi);
 
-  // Prioritas: hasil crop → file input → kamera canvas
-  const blob = typeof getCroppedBlob === 'function' ? getCroppedBlob() : null;
-  if (blob) {
-    formData.append('gambar', blob, 'produk.jpg');
-  } else {
-    const gambarInput = document.getElementById('input-file') || document.getElementById('gambar-produk');
-    if (gambarInput && gambarInput.files && gambarInput.files.length > 0) {
-      formData.append('gambar', gambarInput.files[0]);
-    } else {
-      const cameraCanvas = document.getElementById('camera-canvas');
-      if (cameraCanvas && cameraCanvas.width > 0) {
-        await new Promise(resolve => {
-          cameraCanvas.toBlob(b => { if (b) formData.append('gambar', b, 'foto-kamera.jpg'); resolve(); }, 'image/jpeg', 0.85);
-        });
-      }
-    }
-  }
-
+  await buildGambarFormData(formData);
   const result = await addProduk(formData);
 
   if (result.success) {
-    alert('Produk berhasil ditambahkan');
+    await Swal.fire({
+      icon: 'success', title: 'Berhasil!', text: 'Produk berhasil ditambahkan',
+      background: '#1a1a1a', color: '#fff', confirmButtonColor: '#00a876', timer: 1500, showConfirmButton: false
+    });
     window.location.href = 'index.html';
   } else {
-    alert('Gagal tambah produk: ' + result.error);
+    Swal.fire({
+      icon: 'error', title: 'Gagal', text: 'Gagal tambah produk: ' + result.error,
+      background: '#1a1a1a', color: '#fff', confirmButtonColor: '#ff4d4d'
+    });
   }
 }
 
@@ -334,7 +343,7 @@ async function loadProdukForEdit() {
   }
 
   if (!id) {
-    alert('ID Produk tidak ditemukan di URL! Kembali ke halaman utama.');
+    await Swal.fire({ icon: 'error', title: 'Oops...', text: 'ID Produk tidak ditemukan di URL! Kembali ke halaman utama.', background: '#1a1a1a', color: '#fff', confirmButtonColor: '#ff4d4d' });
     window.location.href = 'index.html';
     return;
   }
@@ -346,7 +355,7 @@ async function loadProdukForEdit() {
   console.log('API Response:', produk);
   
   if (!produk || produk.error) {
-    alert(produk?.error || 'Produk tidak ditemukan');
+    await Swal.fire({ icon: 'error', title: 'Oops...', text: produk?.error || 'Produk tidak ditemukan', background: '#1a1a1a', color: '#fff', confirmButtonColor: '#ff4d4d' });
     return;
   }
 
@@ -354,7 +363,7 @@ async function loadProdukForEdit() {
   const product = Array.isArray(produk) ? produk[0] : produk;
   
   if (!product) {
-    alert('Data produk kosong');
+    await Swal.fire({ icon: 'warning', title: 'Oops...', text: 'Data produk kosong', background: '#1a1a1a', color: '#fff', confirmButtonColor: '#f39c12' });
     console.error('Product data is empty', produk);
     return;
   }
@@ -384,8 +393,9 @@ async function loadProdukForEdit() {
   }
 
   // Tampilkan gambar existing
-  if (produk.gambar) {
-    const url = `${UPLOAD_BASE}/${produk.gambar}`;
+  if (product.gambar) {
+    const url = `${UPLOAD_BASE}/${product.gambar}`;
+    console.log('Loading image:', url); // Debug: log URL gambar
     if (typeof setPreviewFromUrl === 'function') {
       setPreviewFromUrl(url);
     } else {
@@ -393,22 +403,16 @@ async function loadProdukForEdit() {
       const imgPlaceholder = document.getElementById('img-placeholder');
       const btnRemove = document.getElementById('btn-remove-img');
       if (imgPreview) {
+        imgPreview.onerror = function() { this.onerror = null; console.error('Gagal load gambar:', url); };
         imgPreview.src = url;
         imgPreview.style.display = 'block';
         if (imgPlaceholder) imgPlaceholder.style.display = 'none';
         if (btnRemove) btnRemove.style.display = 'flex';
+        console.log('Gambar dimuat:', product.gambar);
       }
-  if (product.gambar) {
-    const imgPreview = document.getElementById('img-preview');
-    const imgPlaceholder = document.getElementById('img-placeholder');
-    const btnRemove = document.getElementById('btn-remove-img');
-    if (imgPreview) {
-      imgPreview.src = `${UPLOAD_BASE}/${product.gambar}`;
-      imgPreview.style.display = 'block';
-      if (imgPlaceholder) imgPlaceholder.style.display = 'none';
-      if (btnRemove) btnRemove.style.display = 'flex';
-      console.log('Gambar dimuat:', product.gambar);
     }
+  } else {
+    console.warn('Produk tidak memiliki gambar');
   }
 }
 
@@ -423,20 +427,14 @@ async function handleUpdateProduk(event) {
   }
 
   const nama = document.getElementById('nama-produk').value.trim();
-
-  // Strip titik pemisah ribuan sebelum parse
   const hargaRaw = document.getElementById('harga-produk').value.replace(/\./g, '');
   const harga = parseFloat(hargaRaw);
-
   const stok = parseInt(document.getElementById('stok-produk').value, 10);
   const kategori_id = document.getElementById('kategori-produk').value;
   const deskripsi = document.getElementById('deskripsi-produk').value.trim();
 
-  // Coba baca dari input-file (update.html baru) atau gambar-produk (fallback)
-  const gambarInput = document.getElementById('input-file') || document.getElementById('gambar-produk');
-
   if (!nama || isNaN(harga) || isNaN(stok) || !kategori_id) {
-    alert('Nama, harga, stok, dan kategori harus diisi dengan benar.');
+    Swal.fire({ icon: 'warning', title: 'Perhatian', text: 'Nama, harga, stok, dan kategori harus diisi dengan benar.', background: '#1a1a1a', color: '#fff', confirmButtonColor: '#f39c12' });
     return;
   }
 
@@ -446,34 +444,33 @@ async function handleUpdateProduk(event) {
   formData.append('harga', harga);
   formData.append('stok', stok);
   formData.append('kategori_id', kategori_id);
-  if (deskripsi) {
-    formData.append('deskripsi', deskripsi);
-  }
+  if (deskripsi) formData.append('deskripsi', deskripsi);
 
-  // Prioritas: hasil crop → file input → kamera canvas
-  const blob = typeof getCroppedBlob === 'function' ? getCroppedBlob() : null;
-  if (blob) {
-    formData.append('gambar', blob, 'produk.jpg');
-  } else {
-    const gambarInput = document.getElementById('input-file') || document.getElementById('gambar-produk');
-    if (gambarInput && gambarInput.files && gambarInput.files.length > 0) {
-      formData.append('gambar', gambarInput.files[0]);
+  await buildGambarFormData(formData);
+
+  // Debug: log FormData entries
+  console.log('=== UPDATE PRODUK DEBUG ===');
+  console.log('ID:', id);
+  for (let [key, value] of formData.entries()) {
+    if (value instanceof File) {
+      console.log(`${key}: File(${value.name}, ${value.size} bytes, ${value.type})`);
     } else {
-      const cameraCanvas = document.getElementById('camera-canvas');
-      if (cameraCanvas && cameraCanvas.width > 0) {
-        await new Promise(resolve => {
-          cameraCanvas.toBlob(b => { if (b) formData.append('gambar', b, 'foto-kamera.jpg'); resolve(); }, 'image/jpeg', 0.85);
-        });
-      }
+      console.log(`${key}: ${value}`);
     }
   }
 
   const result = await updateProduk(id, formData);
 
   if (result.success) {
-    alert('Produk berhasil diupdate');
+    await Swal.fire({
+      icon: 'success', title: 'Berhasil!', text: 'Produk berhasil diupdate',
+      background: '#1a1a1a', color: '#fff', confirmButtonColor: '#00a876', timer: 1500, showConfirmButton: false
+    });
     window.location.href = 'index.html';
   } else {
-    alert('Gagal update produk: ' + result.error);
+    Swal.fire({
+      icon: 'error', title: 'Gagal', text: 'Gagal update produk: ' + result.error,
+      background: '#1a1a1a', color: '#fff', confirmButtonColor: '#ff4d4d'
+    });
   }
 }

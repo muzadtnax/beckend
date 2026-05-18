@@ -150,11 +150,9 @@ a { color: inherit; }
    PAGE HEADER (index)
 ============================================================ */
 .page-header {
-    padding: 40px 0 28px;
+    padding: 30px 0 20px;
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
+    flex-direction: column;
 }
 
 .page-title {
@@ -165,8 +163,56 @@ a { color: inherit; }
 }
 
 .page-count {
-    font-size: 12px;
+    font-size: 13px;
     color: var(--text-dim);
+    margin-top: 4px;
+    display: inline-block;
+}
+
+/* ============================================================
+   CATEGORY PILLS
+================================================================ */
+.category-pills-wrapper {
+    margin-top: 16px;
+    margin-bottom: 8px;
+    width: 100%;
+}
+
+.category-pills {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    scrollbar-width: none; /* Firefox */
+}
+
+.category-pills::-webkit-scrollbar {
+    display: none; /* Chrome/Safari */
+}
+
+.btn-pill {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: var(--text-muted);
+    border-radius: var(--radius-pill);
+    padding: 8px 18px;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-pill:hover {
+    background: rgba(255,255,255,0.1);
+    color: var(--text);
+}
+
+.btn-pill.active {
+    background: var(--green);
+    color: #fff;
+    border-color: var(--green);
+    box-shadow: 0 4px 12px var(--green-glow);
 }
 
 /* ============================================================
@@ -191,7 +237,7 @@ a { color: inherit; }
 .img-wrapper {
     aspect-ratio: 1 / 1;
     overflow: hidden;
-    background: #1a1a1a;
+    background: rgba(255,255,255,0.04);
     flex-shrink: 0;
 }
 
@@ -383,6 +429,7 @@ a { color: inherit; }
 .form-select:focus {
     border-color: var(--green);
     background: rgba(0,168,118,0.06);
+    color: var(--text) !important;
     box-shadow: 0 0 0 3px rgba(0,168,118,0.12);
 }
 
@@ -760,47 +807,59 @@ a { color: inherit; }
     font-family: inherit;
     cursor: pointer;
     transition: background 0.2s;
+}
+.btn-crop-cancel:hover { background: rgba(255,255,255,0.12); }
+
 /* ===== DETAIL MODAL ===== */
 .modal-backdrop {
     background-color: rgba(0,0,0,0.7);
 }
 
 .detail-modal-content {
-    background: #141414;
-    border: 1px solid rgba(255,255,255,0.07);
-    border-radius: 16px;
-    box-shadow: 0 25px 50px rgba(0,0,0,0.8);
+    background: rgba(20, 20, 20, 0.85);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 20px;
+    box-shadow: 0 25px 50px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.1);
 }
 
 .detail-modal-header {
     border-bottom: 1px solid rgba(255,255,255,0.07);
-    padding: 20px 24px;
+    padding: 24px 28px;
 }
 
 .detail-modal-header .modal-title {
-    font-size: 20px;
+    font-size: 22px;
     font-weight: 700;
     color: #fff;
-    letter-spacing: -0.3px;
+    letter-spacing: -0.5px;
 }
 
 .detail-modal-body {
-    padding: 28px 24px;
+    padding: 32px 28px;
 }
 
 .detail-image-wrapper {
     width: 100%;
     aspect-ratio: 1 / 1;
-    background: #1e1e1e;
-    border-radius: 12px;
+    background: radial-gradient(circle, #2a2a2a 0%, #161616 100%);
+    border-radius: 16px;
     overflow: hidden;
     margin-bottom: 16px;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.5);
+    border: 1px solid rgba(255,255,255,0.05);
 }
 
 .detail-image {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    transition: transform 0.4s ease;
+}
+
+.detail-image-wrapper:hover .detail-image {
+    transform: scale(1.05);
 }
 
 .detail-info {
@@ -942,4 +1001,3 @@ a { color: inherit; }
         font-size: 24px;
     }
 }
-.btn-crop-cancel:hover { background: rgba(255,255,255,0.12); }
